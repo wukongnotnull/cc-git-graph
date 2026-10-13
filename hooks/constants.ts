@@ -24,13 +24,14 @@ export const DESCRIPTION_MIN = 24
 export const MAX_CHIPS = 2
 export const CHIP_LABEL_MAX = 22
 
+// The Okabe-Ito palette, chosen to stay apart for red-green colour blindness: no red-green pair,
+// and the blue, vermillion, green and orange also differ in lightness.
 export const LANE_COLORS: readonly string[] = [
-  '#4f8ef7',
-  '#e6529b',
-  '#3ccf6e',
-  '#f5a524',
-  '#9b6df2',
-  '#17b8c9',
-  '#e5534b',
-  '#8b949e',
+  '#0072b2',
+  '#d55e00',
+  '#009e73',
+  '#e69f00',
+  '#56b4e9',
+  '#cc79a7',
+  '#6e7681',
 ]

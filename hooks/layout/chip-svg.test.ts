@@ -28,6 +28,12 @@ describe('chipSvg', () => {
     expect(plain.source).not.toContain('#2f5597')
   })
 
+  test('the remote part can have its own text colour', () => {
+    const chip = chipSvg({ ...base, label: 'main', remote: 'origin', remoteTextColor: '#1f2328', title: 'x' })
+
+    expect(chip.source).toContain('fill="#1f2328"')
+  })
+
   test('escapes markup in names', () => {
     const chip = chipSvg({ ...base, label: 'a<b&c', title: 'a<b&c "x"' })
 

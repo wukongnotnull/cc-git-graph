@@ -15,6 +15,7 @@ export type ChipSvgOptions = {
   color: string
   remoteColor: string
   textColor: string
+  remoteTextColor?: string
   isBold: boolean
   // What a hover shows: the full, uncut name.
   title: string
@@ -47,7 +48,7 @@ export function chipSvg(options: ChipSvgOptions): ChipSvg {
       : `<path d="M${RADIUS} 0 H${localWidth} V${HEIGHT} H${RADIUS} A${RADIUS} ${RADIUS} 0 0 1 0 ${RADIUS} A${RADIUS} ${RADIUS} 0 0 1 ${RADIUS} 0 Z" fill="${options.color}"/>`
   const texts = [
     label(options.label, PAD_X, labelWidth, options.textColor, options.isBold ? '600' : '400'),
-    remote === '' ? '' : label(remote, localWidth + PAD_X, remoteWidth, options.textColor, '400'),
+    remote === '' ? '' : label(remote, localWidth + PAD_X, remoteWidth, options.remoteTextColor ?? options.textColor, '400'),
   ].join('')
 
   return {

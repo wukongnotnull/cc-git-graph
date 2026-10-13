@@ -10,7 +10,7 @@ import { rowSvg } from '../layout/row-svg'
 import type { Actions } from './actions'
 import { chipTitle, chipsOf, limitChips } from './chips'
 import type { Chip } from './chips'
-import { darken } from './color'
+import { darken, readableOn } from './color'
 import type { ColumnPlan } from './columns'
 
 type DesktopUi = ElementTable<'desktop'>
@@ -25,7 +25,7 @@ export function isHeadCommit(commit: Commit): boolean {
   return commit.refs.some(ref => ref.isCurrent)
 }
 
-const CHIP_TEXT = '#ffffff'
+const WHITE = '#ffffff'
 const LOCAL_SHADE = 0.12
 const REMOTE_SHADE = 0.4
 const MORE_COLOR = '#8b949e'
@@ -58,12 +58,16 @@ function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   const marker = chip.isCurrent ? '● ' : chip.kind === 'tag' ? '◆ ' : ''
   const isRemoteOnly = chip.kind === 'remote'
 
+  const local = isRemoteOnly ? REMOTE_ONLY_BACKGROUND : darken(color, LOCAL_SHADE)
+  const remote = darken(color, REMOTE_SHADE)
+
   const svg = chipSvg({
     label: `${marker}${ellipsize(chip.label, CHIP_LABEL_MAX)}`,
     remote: chip.remotes.length === 0 ? undefined : chip.remotes.join(' '),
-    color: isRemoteOnly ? REMOTE_ONLY_BACKGROUND : darken(color, LOCAL_SHADE),
-    remoteColor: darken(color, REMOTE_SHADE),
-    textColor: isRemoteOnly ? REMOTE_ONLY_TEXT : CHIP_TEXT,
+    color: local,
+    remoteColor: remote,
+    textColor: isRemoteOnly ? REMOTE_ONLY_TEXT : readableOn(local),
+    remoteTextColor: readableOn(remote),
     isBold: !isRemoteOnly,
     title,
   })
@@ -76,7 +80,7 @@ function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
   const { shown, hidden } = limitChips(chipsOf(commit.refs), MAX_CHIPS)
   const titles = hidden.map(chipTitle).join('\n')
 
-  const more = chipSvg({ label: `+${hidden.length}`, color: MORE_COLOR, remoteColor: MORE_COLOR, textColor: CHIP_TEXT, isBold: false, title: titles })
+  const more = chipSvg({ label: `+${hidden.length}`, color: MORE_COLOR, remoteColor: MORE_COLOR, textColor: WHITE, isBold: false, title: titles })
 
   return [
     ...shown.flatMap(chip => renderChip(ui, chip, lane)),
