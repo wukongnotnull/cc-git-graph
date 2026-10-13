@@ -31,6 +31,9 @@ export const HASH_WIDTH = 8
 // The description is never squeezed below this many cells; the other columns give way first. The pane opens about
 // 50 cells wide, and there only the graph and the description are drawn: the date needs about 57.
 export const DESCRIPTION_MIN = 36
+// A commit's detail puts its files beside its fields from this many cells on, and under them below.
+export const DETAIL_WIDE_MIN = 100
+export const DETAIL_LABEL_WIDTH = 11
 // A row draws at most this many ref chips, each name cut to this many characters.
 export const MAX_CHIPS = 2
 export const CHIP_LABEL_MAX = 22

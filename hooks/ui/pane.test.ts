@@ -444,6 +444,25 @@ describe('graph column and badges', () => {
     await ui.unmount()
   })
 
+  test('the detail card puts its files beside the fields in a wide pane and under them in a narrow one', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+
+    for (const [bodyColumns, direction] of [[140, 'row'], [60, 'column']] as const) {
+      const ui = await $.ui.mount({ plugin: PLUGIN, surface: 'desktop', component: 'Pane', requestId: PANE_ID, props: { ...PROPS, bodyColumns } })
+
+      await ui.press({ key: `commit-${HASH.m}` })
+
+      expect((await ui.find({ key: 'detail' }))?.props.flexDirection).toBe(direction)
+      expect(await ui.find({ key: 'close-detail' })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /CLAUDE\.md/ })).toBeDefined()
+
+      // The open commit is state, not part of the mount: close it so the next width opens it afresh.
+      await ui.press({ key: 'close-detail' })
+      await ui.unmount()
+    }
+  })
+
   test('a narrower pane drops the author and hash columns before the date', async ($, on) => {
     serve(on, route)
     await $.command.run(RUN)
