@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { Ref } from '../../types'
-import { chipsOf } from './chips'
+import { chipsOf, limitChips } from './chips'
 
 const branch = (name: string, isCurrent = false): Ref => ({ name, kind: 'branch', isCurrent })
 const remote = (name: string): Ref => ({ name, kind: 'remote', isCurrent: false })
@@ -46,5 +46,20 @@ describe('chipsOf', () => {
 
   test('no refs, no chips', () => {
     expect(chipsOf([])).toEqual([])
+  })
+})
+
+describe('limitChips', () => {
+  const chips = chipsOf([branch('a'), branch('b'), branch('c')])
+
+  test('keeps the first chips and counts the rest', () => {
+    const { shown, hiddenCount } = limitChips(chips, 2)
+
+    expect(shown.map(chip => chip.label)).toEqual(['a', 'b'])
+    expect(hiddenCount).toBe(1)
+  })
+
+  test('hides nothing when everything fits', () => {
+    expect(limitChips(chips, 3)).toEqual({ shown: chips, hiddenCount: 0 })
   })
 })

@@ -1,13 +1,14 @@
 import type { ElementTable } from 'claude-code'
 
 import type { Commit, GraphRow } from '../../types'
-import { AUTHOR_WIDTH, DATE_WIDTH, HASH_WIDTH, LANE_COLORS, ROW_HEIGHT } from '../constants'
-import { formatDate, shortHash } from '../format'
+import { AUTHOR_WIDTH, CHIP_LABEL_MAX, DATE_WIDTH, HASH_WIDTH, LANE_COLORS, MAX_CHIPS, ROW_HEIGHT } from '../constants'
+import { ellipsize, formatDate, shortHash } from '../format'
 import { graphWidthPx } from '../layout/graph-width'
 import { rowSvg } from '../layout/row-svg'
 import type { Actions } from './actions'
-import { chipsOf } from './chips'
+import { chipsOf, limitChips } from './chips'
 import type { Chip } from './chips'
+import { darken } from './color'
 import type { ColumnPlan } from './columns'
 
 type DesktopUi = ElementTable<'desktop'>
@@ -19,6 +20,10 @@ export function isHeadCommit(commit: Commit): boolean {
   return commit.refs.some(ref => ref.isCurrent)
 }
 
+const CHIP_TEXT = '#ffffff'
+const LOCAL_SHADE = 0.12
+const REMOTE_SHADE = 0.4
+
 // A chip takes the colour of the lane its commit sits on; a remote branch with no local twin is grey, a tag amber.
 function chipColor(chip: Chip, lane: number): string {
   if (chip.kind === 'tag') {
@@ -29,18 +34,29 @@ function chipColor(chip: Chip, lane: number): string {
 }
 
 // Drawn beside the Button, never inside it: a Button flattens its children to plain text and drops their styles.
+// The remote names sit in a darker block of the same colour, so the branch reads as one chip with two parts.
 function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   const { Text } = ui
   const color = chipColor(chip, lane)
-  const prefix = chip.kind === 'tag' ? '◆ ' : ''
+  const marker = chip.isCurrent ? '● ' : chip.kind === 'tag' ? '◆ ' : ''
   const key = `chip-${chip.kind}-${chip.label}`
 
   return [
-    <Text key={key} color={color} inverse bold underline={chip.isCurrent}>{` ${prefix}${chip.label} `}</Text>,
+    <Text key={key} backgroundColor={darken(color, LOCAL_SHADE)} color={CHIP_TEXT} bold>{` ${marker}${ellipsize(chip.label, CHIP_LABEL_MAX)} `}</Text>,
     chip.remotes.length === 0 ? null : (
-      <Text key={`${key}-remotes`} color={color} inverse italic>{`${chip.remotes.join(' ')} `}</Text>
+      <Text key={`${key}-remotes`} backgroundColor={darken(color, REMOTE_SHADE)} color={CHIP_TEXT}>{` ${chip.remotes.join(' ')} `}</Text>
     ),
     <Text key={`${key}-gap`}>{' '}</Text>,
+  ]
+}
+
+function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
+  const { Text } = ui
+  const { shown, hiddenCount } = limitChips(chipsOf(commit.refs), MAX_CHIPS)
+
+  return [
+    ...shown.flatMap(chip => renderChip(ui, chip, lane)),
+    hiddenCount === 0 ? null : <Text key="chips-more" dimColor>{`+${hiddenCount} `}</Text>,
   ]
 }
 
@@ -57,16 +73,18 @@ export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns:
         alt={`Graph for ${shortHash(commit.hash)}`} />
       <Box flexGrow={1} flexDirection="row" overflow="hidden">
         <Box flexShrink={0} flexDirection="row">
-          {chipsOf(commit.refs).flatMap(chip => renderChip(ui, chip, row.color))}
+          {renderChips(ui, commit, row.color)}
         </Box>
-        <Button
-          key={`commit-${commit.hash}`}
-          plain
-          dimColor={isDim}
-          onPress={() => actions.toggleCommit(commit.hash)}
-        >
-          <Text>{commit.subject}</Text>
-        </Button>
+        <Box flexGrow={1} flexShrink={1} overflow="hidden">
+          <Button
+            key={`commit-${commit.hash}`}
+            plain
+            dimColor={isDim}
+            onPress={() => actions.toggleCommit(commit.hash)}
+          >
+            <Text>{commit.subject}</Text>
+          </Button>
+        </Box>
       </Box>
       {plan.isDateShown ? (
         <Box width={DATE_WIDTH}>

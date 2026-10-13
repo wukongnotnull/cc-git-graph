@@ -19,6 +19,9 @@ export const AUTHOR_WIDTH = 16
 export const HASH_WIDTH = 9
 // The description is never squeezed below this many cells; the other columns give way first.
 export const DESCRIPTION_MIN = 24
+// A row draws at most this many ref chips, each name cut to this many characters.
+export const MAX_CHIPS = 2
+export const CHIP_LABEL_MAX = 22
 
 export const LANE_COLORS: readonly string[] = [
   '#4f8ef7',

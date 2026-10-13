@@ -296,7 +296,7 @@ describe('graph column and badges', () => {
 
     expect(await ui.find({ type: 'Text', text: /\sfeature\/x\s/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /\smain\s/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^origin\s*$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^\s*origin\s*$/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /origin\/main/ })).toBeUndefined()
     await ui.unmount()
   })

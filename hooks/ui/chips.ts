@@ -29,3 +29,8 @@ export function chipsOf(refs: readonly Ref[]): Chip[] {
       isCurrent: ref.isCurrent,
     }))
 }
+
+// The chips a row has room for; the rest are counted, not drawn.
+export function limitChips(chips: readonly Chip[], max: number): { shown: Chip[]; hiddenCount: number } {
+  return { shown: chips.slice(0, max), hiddenCount: Math.max(chips.length - max, 0) }
+}
