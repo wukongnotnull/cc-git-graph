@@ -14,9 +14,10 @@ export const CELL_WIDTH_PX = 10.5
 // Enough cells for the "Graph" header label.
 export const GRAPH_MIN_CELLS = 6
 
-// A date such as `13 Oct 2026 19:47` is 17 characters; the cells over that keep it off the author column.
-export const DATE_WIDTH = 21
-export const AUTHOR_WIDTH = 16
+// Measured against the pane: `13 Oct 2026 19:47` fills about 13.5 of these cells, an eight-character hash about 6.5,
+// a five-character CJK name about 8. Each column keeps a few cells of air and no more.
+export const DATE_WIDTH = 16
+export const AUTHOR_WIDTH = 12
 export const HASH_WIDTH = 9
 // The description is never squeezed below this many cells; the other columns give way first.
 export const DESCRIPTION_MIN = 24

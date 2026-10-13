@@ -366,7 +366,7 @@ describe('graph column and badges', () => {
       surface: 'desktop',
       component: 'Pane',
       requestId: PANE_ID,
-      props: { ...PROPS, bodyColumns: 56 },
+      props: { ...PROPS, bodyColumns: 48 },
     })
 
     expect(await narrow.find({ type: 'Text', text: 'Date' })).toBeDefined()
