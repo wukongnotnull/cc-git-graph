@@ -15,10 +15,10 @@ export const CELL_WIDTH_PX = 10.5
 export const GRAPH_MIN_CELLS = 6
 
 // Measured against the pane: `13 Oct 2026 19:47` fills about 13.5 of these cells, an eight-character hash about 6.5,
-// a five-character CJK name about 8. Each column keeps a few cells of air and no more.
-export const DATE_WIDTH = 16
-export const AUTHOR_WIDTH = 12
-export const HASH_WIDTH = 9
+// a five-character CJK name about 8. Each column keeps one or two cells of air and no more.
+export const DATE_WIDTH = 15
+export const AUTHOR_WIDTH = 10
+export const HASH_WIDTH = 8
 // The description is never squeezed below this many cells; the other columns give way first.
 export const DESCRIPTION_MIN = 24
 // A row draws at most this many ref chips, each name cut to this many characters.
