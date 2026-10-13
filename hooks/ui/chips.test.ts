@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { Ref } from '../../types'
-import { chipTitle, chipsOf, hasCutChips, limitChips } from './chips'
+import { chipTitle, chipsOf, limitChips } from './chips'
 
 const branch = (name: string, isCurrent = false): Ref => ({ name, kind: 'branch', isCurrent })
 const remote = (name: string): Ref => ({ name, kind: 'remote', isCurrent: false })
@@ -53,29 +53,20 @@ describe('limitChips', () => {
   const chips = chipsOf([branch('a'), branch('b'), branch('c')])
 
   test('keeps the first chips and counts the rest', () => {
-    const { shown, hiddenCount } = limitChips(chips, 2)
+    const { shown, hidden } = limitChips(chips, 2)
 
     expect(shown.map(chip => chip.label)).toEqual(['a', 'b'])
-    expect(hiddenCount).toBe(1)
+    expect(hidden.map(chip => chip.label)).toEqual(['c'])
   })
 
   test('hides nothing when everything fits', () => {
-    expect(limitChips(chips, 3)).toEqual({ shown: chips, hiddenCount: 0 })
+    expect(limitChips(chips, 3)).toEqual({ shown: chips, hidden: [] })
   })
 })
 
-describe('chipTitle and hasCutChips', () => {
+describe('chipTitle', () => {
   test('the title spells the remotes out', () => {
     expect(chipTitle({ label: 'main', remotes: ['origin', 'upstream'], kind: 'branch', isCurrent: false })).toBe('main (origin, upstream)')
     expect(chipTitle({ label: 'v1', remotes: [], kind: 'tag', isCurrent: false })).toBe('v1')
-  })
-
-  test('nothing is cut when the chips and names fit', () => {
-    expect(hasCutChips(chipsOf([branch('main')]), 2, 22)).toBe(false)
-  })
-
-  test('a long name or a third chip counts as cut', () => {
-    expect(hasCutChips(chipsOf([branch('a'.repeat(23))]), 2, 22)).toBe(true)
-    expect(hasCutChips(chipsOf([branch('a'), branch('b'), branch('c')]), 2, 22)).toBe(true)
   })
 })

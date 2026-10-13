@@ -60,7 +60,7 @@ describe('Pane on desktop', () => {
       expect(await ui.find({ key: `commit-${hash}` })).toBeDefined()
     }
 
-    expect(await ui.find({ type: 'Text', text: /feature\/x/ })).toBeDefined()
+    expect(await ui.find({ key: 'chip-branch-feature/x' })).toBeDefined()
     expect(await ui.find({ type: 'Svg' })).toBeDefined()
     await ui.unmount()
   })
@@ -293,23 +293,27 @@ describe('graph column and badges', () => {
     serve(on, route)
     await $.command.run(RUN)
     const ui = await mount($)
+    const main = String((await ui.find({ key: 'chip-branch-main' }))?.props.source)
 
-    expect(await ui.find({ type: 'Text', text: /\sfeature\/x\s/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /\smain\s/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /^\s*origin\s*$/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /origin\/main/ })).toBeUndefined()
+    expect(main).toContain('>● main</text>')
+    expect(main).toContain('>origin</text>')
+    expect(await ui.find({ key: 'chip-branch-feature/x' })).toBeDefined()
+    expect(await ui.find({ key: 'chip-remote-origin/main' })).toBeUndefined()
     await ui.unmount()
   })
 
-  test('a row that cuts a ref name offers the full names on hover, and a row that cuts nothing does not', async ($, on) => {
+  test('a chip is a rounded pill whose hover title is the full, uncut name', async ($, on) => {
     const longName = 'feat/' + 'very-long-branch-name-'.repeat(2)
-    const log = recordOf(HASH.m, [HASH.a], 'Ada', 1760000400, `HEAD -> ${longName}`, 'Merge') + recordOf(HASH.a, [], 'Ada', 1760000300, 'main', 'root')
+    const log = recordOf(HASH.m, [HASH.a], 'Ada', 1760000400, `HEAD -> ${longName}`, 'Merge') + recordOf(HASH.a, [], 'Ada', 1760000300, '', 'root')
     serve(on, args => (args[0] === 'log' ? { stdout: log } : route(args)))
     await $.command.run(RUN)
     const ui = await mount($)
+    const chip = await ui.find({ key: `chip-branch-${longName}` })
+    const source = String(chip?.props.source)
 
-    expect(await ui.find({ key: `refs-tip-${HASH.m}` })).toBeDefined()
-    expect(await ui.find({ key: `refs-tip-${HASH.a}` })).toBeUndefined()
+    expect(source).toContain('rx="8"')
+    expect(source).toContain(`<title>${longName}</title>`)
+    expect(source).not.toContain(`>${longName}</text>`)
     await ui.unmount()
   })
 

@@ -3,10 +3,12 @@ import type { ElementTable } from 'claude-code'
 import type { Commit, GraphRow } from '../../types'
 import { AUTHOR_WIDTH, CHIP_LABEL_MAX, DATE_WIDTH, HASH_WIDTH, LANE_COLORS, MAX_CHIPS, ROW_HEIGHT } from '../constants'
 import { ellipsize, formatDate, shortHash } from '../format'
-import { graphCells, graphWidthPx } from '../layout/graph-width'
+import { chipSvg } from '../layout/chip-svg'
+import type { ChipSvg } from '../layout/chip-svg'
+import { graphWidthPx } from '../layout/graph-width'
 import { rowSvg } from '../layout/row-svg'
 import type { Actions } from './actions'
-import { chipTitle, chipsOf, hasCutChips, limitChips } from './chips'
+import { chipTitle, chipsOf, limitChips } from './chips'
 import type { Chip } from './chips'
 import { darken } from './color'
 import type { ColumnPlan } from './columns'
@@ -26,6 +28,7 @@ export function isHeadCommit(commit: Commit): boolean {
 const CHIP_TEXT = '#ffffff'
 const LOCAL_SHADE = 0.12
 const REMOTE_SHADE = 0.4
+const MORE_COLOR = '#8b949e'
 
 // A chip takes the colour of the lane its commit sits on; a remote branch with no local twin is grey, a tag amber.
 function chipColor(chip: Chip, lane: number): string {
@@ -36,54 +39,47 @@ function chipColor(chip: Chip, lane: number): string {
   return chip.kind === 'remote' ? REMOTE_COLOR : (LANE_COLORS[lane % LANE_COLORS.length] ?? REMOTE_COLOR)
 }
 
-// Drawn beside the Button, never inside it: a Button flattens its children to plain text and drops their styles.
-// The remote names sit in a darker block of the same colour, so the branch reads as one chip with two parts.
+function drawChip(ui: DesktopUi, key: string, chip: ChipSvg, alt: string) {
+  const { Svg } = ui
+
+  return <Svg key={key} source={chip.source} width={chip.width} height={chip.height} alt={alt} />
+}
+
+// An SVG pill, drawn beside the Button: the Button flattens its children to plain text, and a Text can only
+// fill a rectangle. The pill's <title> is the full name, shown by the browser on hover, so a cut name can be read.
+// The remote names sit in a darker part of the same pill, so the branch reads as one chip with two parts.
 function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   const { Text } = ui
   const color = chipColor(chip, lane)
   const key = `chip-${chip.kind}-${chip.label}`
-
-  if (chip.kind === 'remote') {
-    return [
-      <Text key={key} backgroundColor={REMOTE_ONLY_BACKGROUND} color={REMOTE_ONLY_TEXT}>{` ${ellipsize(chip.label, CHIP_LABEL_MAX)} `}</Text>,
-      <Text key={`${key}-gap`}>{' '}</Text>,
-    ]
-  }
-
+  const title = chipTitle(chip)
   const marker = chip.isCurrent ? '● ' : chip.kind === 'tag' ? '◆ ' : ''
-  return [
-    <Text key={key} backgroundColor={darken(color, LOCAL_SHADE)} color={CHIP_TEXT} bold>{` ${marker}${ellipsize(chip.label, CHIP_LABEL_MAX)} `}</Text>,
-    chip.remotes.length === 0 ? null : (
-      <Text key={`${key}-remotes`} backgroundColor={darken(color, REMOTE_SHADE)} color={CHIP_TEXT}>{` ${chip.remotes.join(' ')} `}</Text>
-    ),
-    <Text key={`${key}-gap`}>{' '}</Text>,
-  ]
-}
+  const isRemoteOnly = chip.kind === 'remote'
 
-// A hover reveal: the Box stays hidden until the pointer is over the chips (the same scope), then shows every
-// full name above the row. Drawn only for a row that cuts or hides a ref.
-function renderFullNames(ui: DesktopUi, commit: Commit, scope: string, left: number) {
-  const { Box, Text } = ui
-  const chips = chipsOf(commit.refs)
+  const svg = chipSvg({
+    label: `${marker}${ellipsize(chip.label, CHIP_LABEL_MAX)}`,
+    remote: chip.remotes.length === 0 ? undefined : chip.remotes.join(' '),
+    color: isRemoteOnly ? REMOTE_ONLY_BACKGROUND : darken(color, LOCAL_SHADE),
+    remoteColor: darken(color, REMOTE_SHADE),
+    textColor: isRemoteOnly ? REMOTE_ONLY_TEXT : CHIP_TEXT,
+    isBold: !isRemoteOnly,
+    title,
+  })
 
-  if (!hasCutChips(chips, MAX_CHIPS, CHIP_LABEL_MAX)) {
-    return null
-  }
-
-  return (
-    <Box key={`refs-tip-${commit.hash}`} position="absolute" top={-1} left={left} display="none" hover={{ scope, display: 'flex' }}>
-      <Text inverse>{` ${chips.map(chipTitle).join('   ')} `}</Text>
-    </Box>
-  )
+  return [drawChip(ui, key, svg, title), <Text key={`${key}-gap`}>{' '}</Text>]
 }
 
 function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
   const { Text } = ui
-  const { shown, hiddenCount } = limitChips(chipsOf(commit.refs), MAX_CHIPS)
+  const { shown, hidden } = limitChips(chipsOf(commit.refs), MAX_CHIPS)
+  const titles = hidden.map(chipTitle).join('\n')
+
+  const more = chipSvg({ label: `+${hidden.length}`, color: MORE_COLOR, remoteColor: MORE_COLOR, textColor: CHIP_TEXT, isBold: false, title: titles })
 
   return [
     ...shown.flatMap(chip => renderChip(ui, chip, lane)),
-    hiddenCount === 0 ? null : <Text key="chips-more" dimColor>{`+${hiddenCount} `}</Text>,
+    hidden.length === 0 ? null : drawChip(ui, 'chips-more', more, titles),
+    hidden.length === 0 ? null : <Text key="chips-more-gap">{' '}</Text>,
   ]
 }
 
@@ -92,14 +88,14 @@ export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns:
   const isDim = row.isMerge
 
   return (
-    <Box key={`row-${commit.hash}`} position="relative" flexDirection="row" alignItems="center">
+    <Box key={`row-${commit.hash}`} flexDirection="row" alignItems="center">
       <Svg
         source={rowSvg(row, columns, isHeadCommit(commit), graphWidthPx(columns))}
         width={graphWidthPx(columns)}
         height={ROW_HEIGHT}
         alt={`Graph for ${shortHash(commit.hash)}`} />
       <Box flexGrow={1} flexDirection="row" overflow="hidden">
-        <Box flexShrink={0} flexDirection="row" hover={{ scope: `refs-${commit.hash}` }}>
+        <Box flexShrink={0} flexDirection="row" alignItems="center">
           {renderChips(ui, commit, row.color)}
         </Box>
         <Box flexGrow={1} flexShrink={1} overflow="hidden">
@@ -113,7 +109,6 @@ export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns:
           </Button>
         </Box>
       </Box>
-      {renderFullNames(ui, commit, `refs-${commit.hash}`, graphCells(columns))}
       {plan.isDateShown ? (
         <Box width={DATE_WIDTH}>
           <Text dimColor={isDim} wrap="truncate">{formatDate(commit.timestamp)}</Text>

@@ -31,14 +31,10 @@ export function chipsOf(refs: readonly Ref[]): Chip[] {
 }
 
 // The chips a row has room for; the rest are counted, not drawn.
-export function limitChips(chips: readonly Chip[], max: number): { shown: Chip[]; hiddenCount: number } {
-  return { shown: chips.slice(0, max), hiddenCount: Math.max(chips.length - max, 0) }
+export function limitChips(chips: readonly Chip[], max: number): { shown: Chip[]; hidden: Chip[] } {
+  return { shown: chips.slice(0, max), hidden: chips.slice(max) }
 }
 
 // The full name of a chip, remotes included: `main (origin)`.
 export const chipTitle = (chip: Chip): string =>
   chip.remotes.length === 0 ? chip.label : `${chip.label} (${chip.remotes.join(', ')})`
-
-// Whether the row cuts or hides anything a hover would have to spell out.
-export const hasCutChips = (chips: readonly Chip[], maxChips: number, maxLabel: number): boolean =>
-  chips.length > maxChips || chips.some(chip => chip.label.length > maxLabel)
