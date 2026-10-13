@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "wukong-code-dev": {
+      "source": {
+        "source": "github",
+        "repo": "wukongnotnull/wukong-code"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "wukong-code@wukong-code-dev": true
+  }
+}
