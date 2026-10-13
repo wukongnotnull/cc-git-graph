@@ -1,7 +1,7 @@
 import type { ElementTable, EngineInterface, Register } from 'claude-code'
 
 import type { ViewState } from '../types'
-import { PANE_COLUMNS, PANE_ID } from './constants'
+import { PANE_ID } from './constants'
 import { openGraph } from './controller'
 import { initialView } from './state'
 import { makeActions } from './ui/actions'
@@ -39,7 +39,7 @@ function engineOf($: EngineInterface): EngineInterface {
 // Opens the pane and loads the graph. Both the command and the band's button come here;
 // `$` has to stay a plain parameter so the hooks loader can follow it.
 async function openBoard($: EngineInterface): Promise<string> {
-  const opened = await $.ui.open({ id: PANE_ID, title: 'Git Graph', columns: PANE_COLUMNS })
+  const opened = await $.ui.open({ id: PANE_ID, title: 'Git Graph' })
 
   if (!opened.isPlaced) {
     return 'Git Graph: this surface cannot show the panel.'
