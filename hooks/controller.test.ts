@@ -2,7 +2,7 @@ import { read } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 
 import { PAGE_SIZE } from './constants'
-import { loadFirst, loadMore, openGraph, recordFailure, refresh, selectBranch, showNewer, showOlder, toggleCommit, toggleRemote, viewAtom } from './controller'
+import { loadFirst, loadMore, openGraph, recordFailure, refresh, selectBranch, showNewer, showOlder, toggleCommit, toggleFileDiff, toggleRemote, viewAtom } from './controller'
 import { windowEnd } from './layout/window'
 import { HASH, branchListing, forkHistoryLog, linearLog, serveGit } from './testing/fixtures'
 import type { GitReply } from './testing/fixtures'
@@ -11,11 +11,14 @@ const NUMSTAT = '5\t3\tCLAUDE.md\n-\t-\timage.png\n'
 
 const META = [HASH.m, `${HASH.a} ${HASH.b}`, 'Ada', 'ada@x.com', 'Bob', 'bob@x.com', '2026-10-11 16:34:41 +0800', 'Merge branch\n\nbody\n'].join('\x1f')
 
+const DIFF = 'diff --git a/CLAUDE.md b/CLAUDE.md\nindex 1..2 100644\n--- a/CLAUDE.md\n+++ b/CLAUDE.md\n@@ -1,2 +1,2 @@\n-old line\n+new line\n same\n'
+
 const forkRoute = (args: readonly string[]): GitReply | undefined => {
   if (args[0] === 'rev-parse') return { stdout: 'true\n' }
   if (args[0] === 'for-each-ref') return { stdout: branchListing }
   if (args[0] === 'log') return { stdout: forkHistoryLog }
   if (args[0] === 'show' && args.includes('--numstat')) return { stdout: NUMSTAT }
+  if (args[0] === 'show' && args.includes('--unified=3')) return { stdout: DIFF }
   if (args[0] === 'show') return { stdout: META }
 
   return undefined
@@ -552,5 +555,64 @@ describe('windows', () => {
     await showNewer(engine($))
 
     expect((await read(engine($), viewAtom)).windowStart).toBe(0)
+  })
+})
+
+describe('toggleFileDiff', () => {
+  test('loads the diff of a listed file, and a second call closes it', async ($, on) => {
+    const engine = serveGit(on, forkRoute)
+    await loadFirst(engine($))
+    await toggleCommit(engine($), HASH.m)
+    await toggleFileDiff(engine($), 'CLAUDE.md')
+    const open = await read(engine($), viewAtom)
+
+    expect(open.fileDiff?.path).toBe('CLAUDE.md')
+    expect(open.fileDiff?.isLoading).toBe(false)
+    expect(open.fileDiff?.text).toContain('+new line')
+
+    await toggleFileDiff(engine($), 'CLAUDE.md')
+
+    expect((await read(engine($), viewAtom)).fileDiff).toBeNull()
+  })
+
+  test('ignores a path that is not one of the commit\'s files, and runs no git for it', async ($, on) => {
+    const calls: string[][] = []
+    const engine = serveGit(on, forkRoute, calls)
+    await loadFirst(engine($))
+    await toggleCommit(engine($), HASH.m)
+    const before = calls.length
+    await toggleFileDiff(engine($), '../../etc/passwd')
+
+    expect((await read(engine($), viewAtom)).fileDiff).toBeNull()
+    expect(calls.length).toBe(before)
+  })
+
+  test('does nothing while no commit is open', async ($, on) => {
+    const engine = serveGit(on, forkRoute)
+    await loadFirst(engine($))
+    await toggleFileDiff(engine($), 'CLAUDE.md')
+
+    expect((await read(engine($), viewAtom)).fileDiff).toBeNull()
+  })
+
+  test('shows the error when git fails', async ($, on) => {
+    const engine = serveGit(on, args => (args.includes('--unified=3') ? { exitCode: 128, stderr: 'fatal: bad object' } : forkRoute(args)))
+    await loadFirst(engine($))
+    await toggleCommit(engine($), HASH.m)
+    await toggleFileDiff(engine($), 'CLAUDE.md')
+    const view = await read(engine($), viewAtom)
+
+    expect(view.fileDiff?.error).toBe('fatal: bad object')
+    expect(view.fileDiff?.text).toBe('')
+  })
+
+  test('switching to another commit closes the file diff', async ($, on) => {
+    const engine = serveGit(on, forkRoute)
+    await loadFirst(engine($))
+    await toggleCommit(engine($), HASH.m)
+    await toggleFileDiff(engine($), 'CLAUDE.md')
+    await toggleCommit(engine($), HASH.a)
+
+    expect((await read(engine($), viewAtom)).fileDiff).toBeNull()
   })
 })

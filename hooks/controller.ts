@@ -7,6 +7,7 @@ import { ALL_BRANCHES, PAGE_SIZE, PANE_ID } from './constants'
 import { LOG_FORMAT, parseLog } from './git/parse-log'
 import { parseBranches } from './git/parse-branches'
 import { META_FORMAT, parseMeta, parseNumstat } from './git/parse-detail'
+import { parseFileDiff } from './git/parse-diff'
 import { isCommitHash, runGit } from './git/run-git'
 import type { GitFailure } from './git/run-git'
 import { emptyLaneState, layoutCommits } from './layout/lanes'
@@ -157,6 +158,7 @@ async function loadGeneration($: EngineInterface, current: ViewState, generation
       expandedHash: null,
       detail: null,
       detailError: '',
+      fileDiff: null,
       windowStart: 0,
       windowStack: [],
     }
@@ -225,6 +227,7 @@ const clearedList = (view: ViewState): ViewState => ({
   expandedHash: null,
   detail: null,
   detailError: '',
+  fileDiff: null,
   windowStart: 0,
   windowStack: [],
 })
@@ -282,7 +285,7 @@ export async function toggleCommit($: EngineInterface, hash: string): Promise<vo
   const { generation } = view
 
   if (view.expandedHash === hash) {
-    await update($, viewAtom, latest => ({ ...latest, expandedHash: null, detail: null, detailError: '' }))
+    await update($, viewAtom, latest => ({ ...latest, expandedHash: null, detail: null, detailError: '', fileDiff: null }))
 
     return
   }
@@ -291,10 +294,10 @@ export async function toggleCommit($: EngineInterface, hash: string): Promise<vo
     return
   }
 
-  await update($, viewAtom, latest => ({ ...latest, expandedHash: hash, detail: null, detailError: '' }))
+  await update($, viewAtom, latest => ({ ...latest, expandedHash: hash, detail: null, detailError: '', fileDiff: null }))
 
   const meta = await runGit($, ['show', '-s', '--no-ext-diff', '--no-textconv', `--format=${META_FORMAT}`, hash])
-  const files = await runGit($, ['show', '-m', '--first-parent', '--numstat', '--no-ext-diff', '--no-textconv', '--format=', hash])
+  const files = await runGit($, ['show', '-m', '--first-parent', '--no-renames', '--numstat', '--no-ext-diff', '--no-textconv', '--format=', hash])
   const parsed = meta.ok ? parseMeta(meta.stdout) : null
   const detail = parsed === null ? null : { ...parsed, files: files.ok ? parseNumstat(files.stdout) : [] }
   const detailError = describeDetailError(meta, parsed !== null, files)
@@ -345,7 +348,7 @@ export async function showOlder($: EngineInterface): Promise<void> {
 
   await update($, viewAtom, (view): ViewState =>
     view.generation === latest.generation && view.windowStart === latest.windowStart
-      ? { ...view, windowStart: end, windowStack: [...view.windowStack, view.windowStart], expandedHash: null, detail: null, detailError: '' }
+      ? { ...view, windowStart: end, windowStack: [...view.windowStack, view.windowStart], expandedHash: null, detail: null, detailError: '', fileDiff: null }
       : view,
   )
   await fillWindow($)
@@ -379,8 +382,43 @@ export async function showNewer($: EngineInterface): Promise<void> {
 
   await update($, viewAtom, (latest): ViewState =>
     latest.generation === view.generation && latest.windowStart === view.windowStart
-      ? { ...latest, windowStart: previous, windowStack: latest.windowStack.slice(0, -1), expandedHash: null, detail: null, detailError: '' }
+      ? { ...latest, windowStart: previous, windowStack: latest.windowStack.slice(0, -1), expandedHash: null, detail: null, detailError: '', fileDiff: null }
       : latest,
   )
   await scrollToRow($, view.commits[previous]?.hash)
+}
+
+const NO_DIFF = { text: '', isCut: false, isTooLarge: false }
+
+// Opens the diff of one file of the open commit under the card, or closes it when it is already open. A rename is
+// listed as a delete and an add (`--no-renames`), so every listed path is a plain pathspec.
+export async function toggleFileDiff($: EngineInterface, path: string): Promise<void> {
+  const view = await read($, viewAtom)
+  const { detail, generation } = view
+
+  if (detail === null || !isCommitHash(detail.hash)) {
+    return
+  }
+
+  if (view.fileDiff?.path === path) {
+    await update($, viewAtom, latest => ({ ...latest, fileDiff: null }))
+
+    return
+  }
+
+  if (!detail.files.some(file => file.path === path)) {
+    return
+  }
+
+  const loading = { path, ...NO_DIFF, error: '', isLoading: true }
+  await update($, viewAtom, (latest): ViewState => ({ ...latest, fileDiff: loading }))
+
+  const result = await runGit($, ['show', '-m', '--first-parent', '--no-renames', '--no-ext-diff', '--no-textconv', '--format=', '--unified=3', detail.hash, '--', path])
+  const shown = { path, ...(result.ok ? parseFileDiff(result.stdout) : NO_DIFF), error: result.ok ? '' : result.message, isLoading: false }
+
+  await update($, viewAtom, (latest): ViewState =>
+    latest.detail?.hash === detail.hash && latest.fileDiff?.path === path && isCurrent(latest, generation)
+      ? { ...latest, fileDiff: shown }
+      : latest,
+  )
 }

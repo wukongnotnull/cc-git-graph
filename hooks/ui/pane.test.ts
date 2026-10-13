@@ -10,11 +10,14 @@ import type { GitReply } from '../testing/fixtures'
 
 const META = [HASH.m, `${HASH.a} ${HASH.b}`, 'Ada', 'ada@x.com', 'Bob', 'bob@x.com', '2026-10-11 16:34:41 +0800', 'Merge branch\n\nbody\n'].join('\x1f')
 
+const DIFF = 'diff --git a/CLAUDE.md b/CLAUDE.md\nindex 1..2 100644\n--- a/CLAUDE.md\n+++ b/CLAUDE.md\n@@ -1,2 +1,2 @@\n-old line\n+new line\n same\n'
+
 const route = (args: readonly string[]): GitReply | undefined => {
   if (args[0] === 'rev-parse') return { stdout: 'true\n' }
   if (args[0] === 'for-each-ref') return { stdout: branchListing }
   if (args[0] === 'log') return { stdout: forkHistoryLog }
   if (args[0] === 'show' && args.includes('--numstat')) return { stdout: '5\t3\tCLAUDE.md\n' }
+  if (args[0] === 'show' && args.includes('--unified=3')) return { stdout: DIFF }
   if (args[0] === 'show') return { stdout: META }
 
   return undefined
@@ -453,7 +456,7 @@ describe('graph column and badges', () => {
 
       await ui.press({ key: `commit-${HASH.m}` })
 
-      expect((await ui.find({ key: 'detail' }))?.props.flexDirection).toBe(direction)
+      expect((await ui.find({ key: 'detail-body' }))?.props.flexDirection).toBe(direction)
       expect(await ui.find({ key: 'close-detail' })).toBeDefined()
       expect(await ui.find({ type: 'Text', text: /CLAUDE\.md/ })).toBeDefined()
 
@@ -461,6 +464,49 @@ describe('graph column and badges', () => {
       await ui.press({ key: 'close-detail' })
       await ui.unmount()
     }
+  })
+
+  test('pressing a file of the open commit shows its diff, pressing it again hides it', async ($, on) => {
+    const calls: string[][] = []
+    serve(on, route, calls)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    await ui.press({ key: `commit-${HASH.m}` })
+
+    expect(await ui.find({ type: 'Code' })).toBeUndefined()
+
+    await ui.press({ key: 'file-diff-CLAUDE.md' })
+    const code = await ui.find({ type: 'Code' })
+
+    expect(code?.props.format).toBe('diff')
+    expect(String(code?.props.source)).toContain('+new line')
+    expect(String(code?.props.source)).not.toContain('diff --git')
+
+    const shows = calls.filter(call => call[0] === 'show' && call.includes('--unified=3'))
+
+    expect(shows).toHaveLength(1)
+    expect(shows[0]?.slice(-3)).toEqual([HASH.m, '--', 'CLAUDE.md'])
+
+    await ui.press({ key: 'file-diff-CLAUDE.md' })
+
+    expect(await ui.find({ type: 'Code' })).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('closing the commit also closes its file diff', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    await ui.press({ key: `commit-${HASH.m}` })
+    await ui.press({ key: 'file-diff-CLAUDE.md' })
+    await ui.press({ key: 'close-detail' })
+    await ui.press({ key: `commit-${HASH.m}` })
+
+    expect(await ui.find({ type: 'Code' })).toBeUndefined()
+    await ui.press({ key: 'close-detail' })
+    await ui.unmount()
   })
 
   test('a narrower pane drops the author and hash columns before the date', async ($, on) => {
