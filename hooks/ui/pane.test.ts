@@ -532,6 +532,20 @@ describe('graph column and badges', () => {
     await ui.unmount()
   })
 
+  test('the Refs line of the detail is a field of its own, not wrapped in a row that would squeeze its value', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    await ui.press({ key: `commit-${HASH.m}` })
+
+    expect(await ui.find({ key: 'field-Refs:' })).toBeDefined()
+    expect(await ui.find({ key: 'detail-refs' })).toBeUndefined()
+    expect((await ui.find({ key: 'field-Refs:' }))?.props.flexDirection).toBe('row')
+    await ui.press({ key: 'close-detail' })
+    await ui.unmount()
+  })
+
   test('a narrower pane drops the author and hash columns before the date', async ($, on) => {
     serve(on, route)
     await $.command.run(RUN)
