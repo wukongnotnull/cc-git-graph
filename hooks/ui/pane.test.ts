@@ -352,6 +352,38 @@ describe('graph column and badges', () => {
     await ui.unmount()
   })
 
+  test('turning the remote toggle back on asks git for the remote branches again', async ($, on) => {
+    const calls: string[][] = []
+    serve(on, route, calls)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    await ui.press({ key: 'remote' })
+    await ui.press({ key: 'remote' })
+
+    expect(logCalls(calls).at(-1)).toContain('--remotes')
+    expect(String((await ui.find({ key: 'remote' }))?.props.label)).toContain('☑')
+    await ui.unmount()
+  })
+
+  test('switching the remote branches off also takes the remote part off the chips, and back on restores it', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    expect(await chipNamed(ui, 'main (origin)')).toBeDefined()
+
+    await ui.press({ key: 'remote' })
+
+    expect(await chipNamed(ui, 'main (origin)')).toBeUndefined()
+    expect(String((await chipNamed(ui, 'main'))?.props.source)).not.toContain('>origin</text>')
+
+    await ui.press({ key: 'remote' })
+
+    expect(await chipNamed(ui, 'main (origin)')).toBeDefined()
+    await ui.unmount()
+  })
+
   test('a narrower pane drops the author and hash columns before the date', async ($, on) => {
     serve(on, route)
     await $.command.run(RUN)

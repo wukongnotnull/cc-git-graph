@@ -8,7 +8,7 @@ import type { ChipSvg } from '../layout/chip-svg'
 import { graphWidthPx } from '../layout/graph-width'
 import { rowSvg } from '../layout/row-svg'
 import type { Actions } from './actions'
-import { chipTitle, chipsOf, limitChips } from './chips'
+import { chipTitle, chipsOf, limitChips, visibleRefs } from './chips'
 import type { Chip } from './chips'
 import { darken, readableOn } from './color'
 import type { ColumnPlan } from './columns'
@@ -75,9 +75,9 @@ function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   return [drawChip(ui, key, svg, title), <Text key={`${key}-gap`}>{' '}</Text>]
 }
 
-function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
+function renderChips(ui: DesktopUi, commit: Commit, lane: number, isRemoteShown: boolean) {
   const { Text } = ui
-  const { shown, hidden } = limitChips(chipsOf(commit.refs), MAX_CHIPS)
+  const { shown, hidden } = limitChips(chipsOf(visibleRefs(commit.refs, isRemoteShown)), MAX_CHIPS)
   const titles = hidden.map(chipTitle).join('\n')
 
   const more = chipSvg({ label: `+${hidden.length}`, color: MORE_COLOR, remoteColor: MORE_COLOR, textColor: WHITE, isBold: false, title: titles })
@@ -91,7 +91,7 @@ function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
 
 // The description starts from zero width and takes whatever the fixed columns leave, the same in every row and in
 // the header; sized by its content it would be wider in a row with chips and push that row's date column along.
-export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns: number, plan: ColumnPlan, actions: Actions) {
+export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns: number, plan: ColumnPlan, isRemoteShown: boolean, actions: Actions) {
   const { Box, Button, Svg, Text } = ui
   const isDim = row.isMerge
 
@@ -104,7 +104,7 @@ export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns:
         alt={`Graph for ${shortHash(commit.hash)}`} />
       <Box key={`description-${commit.hash}`} flexGrow={1} flexShrink={1} width={0} minWidth={0} flexDirection="row" overflow="hidden">
         <Box flexShrink={0} flexDirection="row" alignItems="center">
-          {renderChips(ui, commit, row.color)}
+          {renderChips(ui, commit, row.color, isRemoteShown)}
         </Box>
         <Box flexGrow={1} flexShrink={1} overflow="hidden">
           <Button

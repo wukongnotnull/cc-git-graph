@@ -3,7 +3,7 @@ import type { ElementTable } from 'claude-code'
 import type { ViewState } from '../../types'
 import { shortHash } from '../format'
 import type { Actions } from './actions'
-import { chipTitle, chipsOf } from './chips'
+import { chipTitle, chipsOf, visibleRefs } from './chips'
 
 type DesktopUi = ElementTable<'desktop'>
 
@@ -26,7 +26,7 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
   }
 
   // Chips in the row cut long names and hide extra refs; here every one is spelled out.
-  const refs = chipsOf(view.commits.find(commit => commit.hash === detail.hash)?.refs ?? []).map(chipTitle)
+  const refs = chipsOf(visibleRefs(view.commits.find(commit => commit.hash === detail.hash)?.refs ?? [], view.isRemoteShown)).map(chipTitle)
 
   return (
     <Box key="detail" flexDirection="row" gap={2} borderStyle="round" paddingX={1}>

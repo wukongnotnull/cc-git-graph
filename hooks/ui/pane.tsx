@@ -58,7 +58,7 @@ function renderList(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumn
       return []
     }
 
-    const parts = [renderRow(ui, commit, row, columns, plan, actions)]
+    const parts = [renderRow(ui, commit, row, columns, plan, view.isRemoteShown, actions)]
 
     if (view.expandedHash === commit.hash) {
       parts.push(renderDetail(ui, view, loaded, actions))

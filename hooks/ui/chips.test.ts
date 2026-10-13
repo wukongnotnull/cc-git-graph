@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { Ref } from '../../types'
-import { chipTitle, chipsOf, limitChips } from './chips'
+import { chipTitle, chipsOf, limitChips, visibleRefs } from './chips'
 
 const branch = (name: string, isCurrent = false): Ref => ({ name, kind: 'branch', isCurrent })
 const remote = (name: string): Ref => ({ name, kind: 'remote', isCurrent: false })
@@ -68,5 +68,18 @@ describe('chipTitle', () => {
   test('the title spells the remotes out', () => {
     expect(chipTitle({ label: 'main', remotes: ['origin', 'upstream'], kind: 'branch', isCurrent: false })).toBe('main (origin, upstream)')
     expect(chipTitle({ label: 'v1', remotes: [], kind: 'tag', isCurrent: false })).toBe('v1')
+  })
+})
+
+describe('visibleRefs', () => {
+  const refs = [branch('main'), remote('origin/main'), remote('origin/HEAD'), tag('v1')]
+
+  test('keeps every ref while remote branches are shown', () => {
+    expect(visibleRefs(refs, true)).toEqual(refs)
+  })
+
+  test('drops the remote refs, and with them the origin part of a chip, when they are hidden', () => {
+    expect(visibleRefs(refs, false).map(ref => ref.name)).toEqual(['main', 'v1'])
+    expect(chipsOf(visibleRefs(refs, false))[0]?.remotes).toEqual([])
   })
 })

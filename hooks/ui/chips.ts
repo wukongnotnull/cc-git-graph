@@ -38,3 +38,8 @@ export function limitChips(chips: readonly Chip[], max: number): { shown: Chip[]
 // The full name of a chip, remotes included: `main (origin)`.
 export const chipTitle = (chip: Chip): string =>
   chip.remotes.length === 0 ? chip.label : `${chip.label} (${chip.remotes.join(', ')})`
+
+// git decorates a commit with its remote branches whether or not `--remotes` was asked for, so the
+// "Show Remote Branches" switch has to drop them from what is drawn too.
+export const visibleRefs = (refs: readonly Ref[], isRemoteShown: boolean): Ref[] =>
+  isRemoteShown ? [...refs] : refs.filter(ref => ref.kind !== 'remote')
