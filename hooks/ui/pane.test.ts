@@ -336,6 +336,22 @@ describe('graph column and badges', () => {
     await ui.unmount()
   })
 
+  test('every row and the header give the description the same width basis, so the columns line up', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+    const header = await ui.find({ key: 'description-header' })
+    const withChips = await ui.find({ key: `description-${HASH.m}` })
+    const withoutChips = await ui.find({ key: `description-${HASH.a}` })
+
+    for (const box of [header, withChips, withoutChips]) {
+      expect(box?.props.width).toBe(0)
+      expect(box?.props.flexGrow).toBe(1)
+    }
+
+    await ui.unmount()
+  })
+
   test('a narrower pane drops the author and hash columns before the date', async ($, on) => {
     serve(on, route)
     await $.command.run(RUN)

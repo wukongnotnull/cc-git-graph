@@ -20,7 +20,7 @@ function renderHeader(ui: DesktopUi, columns: number, plan: ColumnPlan) {
       <Box width={graphCells(columns)}>
         <Text bold>Graph</Text>
       </Box>
-      <Box flexGrow={1}>
+      <Box key="description-header" flexGrow={1} flexShrink={1} width={0} minWidth={0}>
         <Text bold>Description</Text>
       </Box>
       {plan.isDateShown ? (

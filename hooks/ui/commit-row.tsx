@@ -89,6 +89,8 @@ function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
   ]
 }
 
+// The description starts from zero width and takes whatever the fixed columns leave, the same in every row and in
+// the header; sized by its content it would be wider in a row with chips and push that row's date column along.
 export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns: number, plan: ColumnPlan, actions: Actions) {
   const { Box, Button, Svg, Text } = ui
   const isDim = row.isMerge
@@ -100,7 +102,7 @@ export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns:
         width={graphWidthPx(columns)}
         height={ROW_HEIGHT}
         alt={`Graph for ${shortHash(commit.hash)}`} />
-      <Box flexGrow={1} flexDirection="row" overflow="hidden">
+      <Box key={`description-${commit.hash}`} flexGrow={1} flexShrink={1} width={0} minWidth={0} flexDirection="row" overflow="hidden">
         <Box flexShrink={0} flexDirection="row" alignItems="center">
           {renderChips(ui, commit, row.color)}
         </Box>
