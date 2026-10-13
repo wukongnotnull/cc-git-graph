@@ -51,7 +51,7 @@ export async function runGit($: EngineInterface, args: readonly string[]): Promi
     return { ok: false, kind: 'not-a-repo', message: 'Not a git repository.' }
   }
 
-  if (/does not have any commits yet|unknown revision|ambiguous argument 'HEAD'/i.test(result.stderr)) {
+  if (/does not have any commits yet|ambiguous argument 'HEAD'|unknown revision.*\bHEAD\b/i.test(result.stderr)) {
     return { ok: false, kind: 'no-commits', message: 'The repository has no commits yet.' }
   }
 
