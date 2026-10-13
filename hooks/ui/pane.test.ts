@@ -60,7 +60,7 @@ describe('Pane on desktop', () => {
       expect(await ui.find({ key: `commit-${hash}` })).toBeDefined()
     }
 
-    expect(await ui.find({ key: 'chip-branch-feature/x' })).toBeDefined()
+    expect(await chipNamed(ui, 'feature/x')).toBeDefined()
     expect(await ui.find({ type: 'Svg' })).toBeDefined()
     await ui.unmount()
   })
@@ -167,6 +167,10 @@ type TestEngine = Parameters<TestBody>[0]
 
 const mount = ($: TestEngine) =>
   $.ui.mount({ plugin: PLUGIN, surface: 'desktop', component: 'Pane', requestId: PANE_ID, props: PROPS })
+
+// A chip is an Svg whose alt is its full name; a leaf element carries no key a query could match.
+const chipNamed = async (ui: { findAll: (query: { type: string }) => Promise<{ props: Record<string, unknown> }[]> }, name: string) =>
+  (await ui.findAll({ type: 'Svg' })).find(svg => svg.props.alt === name)
 
 const pagedRoute = (records: readonly string[]) => (args: readonly string[]): GitReply | undefined => {
   if (args[0] !== 'log') return route(args)
@@ -293,12 +297,12 @@ describe('graph column and badges', () => {
     serve(on, route)
     await $.command.run(RUN)
     const ui = await mount($)
-    const main = String((await ui.find({ key: 'chip-branch-main' }))?.props.source)
+    const main = String((await chipNamed(ui, 'main (origin)'))?.props.source)
 
     expect(main).toContain('>● main</text>')
     expect(main).toContain('>origin</text>')
-    expect(await ui.find({ key: 'chip-branch-feature/x' })).toBeDefined()
-    expect(await ui.find({ key: 'chip-remote-origin/main' })).toBeUndefined()
+    expect(await chipNamed(ui, 'feature/x')).toBeDefined()
+    expect(await chipNamed(ui, 'origin/main')).toBeUndefined()
     await ui.unmount()
   })
 
@@ -308,7 +312,7 @@ describe('graph column and badges', () => {
     serve(on, args => (args[0] === 'log' ? { stdout: log } : route(args)))
     await $.command.run(RUN)
     const ui = await mount($)
-    const chip = await ui.find({ key: `chip-branch-${longName}` })
+    const chip = await chipNamed(ui, longName)
     const source = String(chip?.props.source)
 
     expect(source).toContain('rx="8"')
