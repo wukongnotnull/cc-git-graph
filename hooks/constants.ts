@@ -17,6 +17,8 @@ export const GRAPH_MIN_CELLS = 6
 export const DATE_WIDTH = 18
 export const AUTHOR_WIDTH = 16
 export const HASH_WIDTH = 9
+// The description is never squeezed below this many cells; the other columns give way first.
+export const DESCRIPTION_MIN = 24
 
 export const LANE_COLORS: readonly string[] = [
   '#4f8ef7',

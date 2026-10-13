@@ -4,6 +4,8 @@ import type { ViewState } from '../../types'
 import { AUTHOR_WIDTH, DATE_WIDTH, HASH_WIDTH } from '../constants'
 import { graphCells } from '../layout/graph-width'
 import { columnCount } from '../layout/lanes'
+import { planColumns } from './columns'
+import type { ColumnPlan } from './columns'
 import type { Actions } from './actions'
 import { renderDetail } from './commit-detail'
 import { renderRow } from './commit-row'
@@ -11,7 +13,7 @@ import { renderToolbar } from './toolbar'
 
 type DesktopUi = ElementTable<'desktop'>
 
-function renderHeader(ui: DesktopUi, columns: number) {
+function renderHeader(ui: DesktopUi, columns: number, plan: ColumnPlan) {
   const { Box, Text } = ui
   return (
     <Box flexDirection="row">
@@ -21,15 +23,21 @@ function renderHeader(ui: DesktopUi, columns: number) {
       <Box flexGrow={1}>
         <Text bold>Description</Text>
       </Box>
-      <Box width={DATE_WIDTH}>
-        <Text bold>Date</Text>
-      </Box>
-      <Box width={AUTHOR_WIDTH}>
-        <Text bold>Author</Text>
-      </Box>
-      <Box width={HASH_WIDTH}>
-        <Text bold>Commit</Text>
-      </Box>
+      {plan.isDateShown ? (
+        <Box width={DATE_WIDTH}>
+          <Text bold>Date</Text>
+        </Box>
+      ) : null}
+      {plan.isAuthorShown ? (
+        <Box width={AUTHOR_WIDTH}>
+          <Text bold>Author</Text>
+        </Box>
+      ) : null}
+      {plan.isHashShown ? (
+        <Box width={HASH_WIDTH}>
+          <Text bold>Commit</Text>
+        </Box>
+      ) : null}
     </Box>
   )
 }
@@ -37,9 +45,10 @@ function renderHeader(ui: DesktopUi, columns: number) {
 const describeFailure = (view: ViewState): string =>
   view.status === 'error' ? `无法读取 Git 历史:${view.errorMessage}` : view.errorMessage
 
-function renderList(ui: DesktopUi, view: ViewState, actions: Actions) {
+function renderList(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumns: number) {
   const { Box, Button, Text } = ui
   const columns = columnCount(view.rows)
+  const plan = planColumns(bodyColumns, graphCells(columns))
   const loaded = new Set(view.commits.map(commit => commit.hash))
 
   const items = view.commits.flatMap((commit, index) => {
@@ -49,7 +58,7 @@ function renderList(ui: DesktopUi, view: ViewState, actions: Actions) {
       return []
     }
 
-    const parts = [renderRow(ui, commit, row, columns, actions)]
+    const parts = [renderRow(ui, commit, row, columns, plan, actions)]
 
     if (view.expandedHash === commit.hash) {
       parts.push(renderDetail(ui, view, loaded, actions))
@@ -60,7 +69,7 @@ function renderList(ui: DesktopUi, view: ViewState, actions: Actions) {
 
   return (
     <Box flexDirection="column">
-      {renderHeader(ui, columns)}
+      {renderHeader(ui, columns, plan)}
       {items}
       {view.errorMessage === '' ? null : <Text color="error">{describeFailure(view)}</Text>}
       {view.hasMore ? <Button key="more" label="加载更多" onPress={() => actions.loadMore()} /> : null}
@@ -68,7 +77,7 @@ function renderList(ui: DesktopUi, view: ViewState, actions: Actions) {
   )
 }
 
-function renderBody(ui: DesktopUi, view: ViewState, actions: Actions) {
+function renderBody(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumns: number) {
   const { Text } = ui
   const isLoading = view.status === 'idle' || (view.status === 'loading' && view.commits.length === 0)
 
@@ -88,16 +97,16 @@ function renderBody(ui: DesktopUi, view: ViewState, actions: Actions) {
     return <Text dimColor>这个仓库还没有提交。</Text>
   }
 
-  return renderList(ui, view, actions)
+  return renderList(ui, view, actions, bodyColumns)
 }
 
-export function renderPane(ui: DesktopUi, view: ViewState, actions: Actions) {
+export function renderPane(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumns: number) {
   const { Box } = ui
 
   return (
     <Box flexDirection="column" gap={1}>
       {renderToolbar(ui, view, actions)}
-      {renderBody(ui, view, actions)}
+      {renderBody(ui, view, actions, bodyColumns)}
     </Box>
   )
 }

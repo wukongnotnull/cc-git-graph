@@ -1,0 +1,31 @@
+import type { Ref, RefKind } from '../../types'
+
+export type Chip = {
+  label: string
+  // Remotes that carry the same branch (`origin` for `origin/main`), drawn inside the local branch's chip.
+  remotes: string[]
+  kind: RefKind
+  isCurrent: boolean
+}
+
+const remoteOf = (name: string): string => name.slice(0, Math.max(name.indexOf('/'), 0))
+const branchOf = (name: string): string => name.slice(name.indexOf('/') + 1)
+
+// One chip per local branch, tag or HEAD; a remote branch joins the local branch of the same name
+// when that branch sits on the same commit, and stands alone otherwise.
+export function chipsOf(refs: readonly Ref[]): Chip[] {
+  const locals = new Set(refs.filter(ref => ref.kind === 'branch').map(ref => ref.name))
+  const joined = (ref: Ref): boolean => ref.kind === 'remote' && !ref.name.endsWith('/HEAD') && locals.has(branchOf(ref.name))
+
+  return refs
+    .filter(ref => !joined(ref))
+    .map((ref): Chip => ({
+      label: ref.name,
+      remotes:
+        ref.kind === 'branch'
+          ? refs.filter(other => joined(other) && branchOf(other.name) === ref.name).map(other => remoteOf(other.name))
+          : [],
+      kind: ref.kind,
+      isCurrent: ref.isCurrent,
+    }))
+}

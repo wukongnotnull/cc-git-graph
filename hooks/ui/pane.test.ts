@@ -289,13 +289,39 @@ describe('graph column and badges', () => {
     await ui.unmount()
   })
 
-  test('ref badges are bracketed', async ($, on) => {
+  test('ref badges are chips, and a remote branch joins the local branch of the same name', async ($, on) => {
     serve(on, route)
     await $.command.run(RUN)
     const ui = await mount($)
 
-    expect(await ui.find({ type: 'Text', text: /\[feature\/x\]/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /\[origin\/main\]/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /\sfeature\/x\s/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /\smain\s/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^origin\s*$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /origin\/main/ })).toBeUndefined()
     await ui.unmount()
+  })
+
+  test('a narrower pane drops the author and hash columns before the date', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const wide = await mount($)
+
+    expect(await wide.find({ type: 'Text', text: 'Author' })).toBeDefined()
+    expect(await wide.find({ type: 'Text', text: 'Commit' })).toBeDefined()
+    await wide.unmount()
+
+    const narrow = await $.ui.mount({
+      plugin: PLUGIN,
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: PANE_ID,
+      props: { ...PROPS, bodyColumns: 56 },
+    })
+
+    expect(await narrow.find({ type: 'Text', text: 'Date' })).toBeDefined()
+    expect(await narrow.find({ type: 'Text', text: 'Author' })).toBeUndefined()
+    expect(await narrow.find({ type: 'Text', text: 'Commit' })).toBeUndefined()
+    expect(await narrow.find({ key: `commit-${HASH.m}` })).toBeDefined()
+    await narrow.unmount()
   })
 })

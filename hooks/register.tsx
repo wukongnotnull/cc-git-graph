@@ -96,6 +96,6 @@ export const register: Register = on => {
     const ui = $.ui.resolve(e) as ElementTable<'desktop'>
     const { value: view = initialView } = await $.state.get(VIEW_REF)
 
-    return renderPane(ui, view, makeActions(engineOf($)))
+    return renderPane(ui, view, makeActions(engineOf($)), e.props.bodyColumns)
   })
 }
