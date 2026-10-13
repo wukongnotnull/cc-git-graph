@@ -13,11 +13,39 @@
 
 ## 安装
 
+在**终端**里安装(桌面应用的会话里没有 `/plugin install`),任选一种:
+
 ```bash
+claude
+```
+
+然后在打开的会话里输入:
+
+```text
 /plugin install cc-git-graph --marketplace wukongnotnull/cc-git-graph
 ```
 
+按提示回答 `y` 添加市场,再选 user scope。也可以用不交互的命令:
+
+```bash
+claude plugin marketplace add wukongnotnull/cc-git-graph
+```
+
+```bash
+claude plugin install cc-git-graph@cc-git-graph
+```
+
+装在 user scope 之后,桌面应用里之后新开的本地会话都会加载它:输入 `/git-graph`,或点输入框上方的「Git Graph」按钮。
+
 仅支持桌面应用;其他界面只显示一句提示。
+
+### 更新
+
+已安装的版本是安装时的副本。发布新版本时要同时修改 `.claude-plugin/plugin.json` 和 `.claude-plugin/marketplace.json` 里的 `version`,使用者再运行:
+
+```bash
+claude plugin update cc-git-graph
+```
 
 ## 开发
 
