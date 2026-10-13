@@ -349,6 +349,42 @@ describe('superseded results', () => {
   })
 })
 
+describe('overlapping actions', () => {
+  test('two concurrent loadMore calls append the next page once', async ($, on) => {
+    const all = linearLog(PAGE_SIZE + 5)
+    const engine = serveGit(on, pagedRoute(all))
+    await loadFirst(engine($))
+    await Promise.all([loadMore(engine($)), loadMore(engine($))])
+    const view = await read(engine($), viewAtom)
+
+    expect(view.commits).toHaveLength(PAGE_SIZE + 5)
+    expect(view.rows).toHaveLength(PAGE_SIZE + 5)
+    expect(view.rows.every(row => row.lane === 0)).toBe(true)
+    expect(view.hasMore).toBe(false)
+  })
+
+  test('a held refresh finishing after selectBranch leaves no old-branch commits', async ($, on) => {
+    const gate = deferred<GitReply>()
+    let logCalls = 0
+    const engine = serveGit(on, args => {
+      if (args[0] === 'log' && (logCalls += 1) === 2) return gate.promise
+      if (args[0] === 'log' && args.includes('feature/x')) return { stdout: linearLog(2).join('') }
+
+      return forkRoute(args)
+    })
+    await loadFirst(engine($))
+    const held = refresh(engine($))
+    await settle()
+    await selectBranch(engine($), 'feature/x')
+    gate.resolve({ stdout: forkHistoryLog })
+    await held
+    const view = await read(engine($), viewAtom)
+
+    expect(view.branch).toBe('feature/x')
+    expect(view.commits).toHaveLength(2)
+  })
+})
+
 describe('detail errors and serialization', () => {
   test('keeps the detail and reports a file-list failure', async ($, on) => {
     const engine = serveGit(on, args =>

@@ -54,6 +54,10 @@ async function fetchPage($: EngineInterface, view: ViewState, offset: number): P
 
 const isCurrent = (view: ViewState, generation: number): boolean => view.generation === generation
 
+// A page may only extend the list it was fetched for; a sibling loadMore may have extended it already.
+const isSamePage = (latest: ViewState, base: ViewState): boolean =>
+  isCurrent(latest, base.generation) && latest.commits.length === base.commits.length
+
 async function fail($: EngineInterface, failure: GitFailure, generation: number): Promise<void> {
   await update($, viewAtom, (latest): ViewState => {
     if (!isCurrent(latest, generation)) {
@@ -149,7 +153,7 @@ export async function loadMore($: EngineInterface): Promise<void> {
   const result = await fetchPage($, view, view.commits.length)
 
   if (!result.ok) {
-    await update($, viewAtom, latest => (isCurrent(latest, view.generation) ? { ...latest, errorMessage: result.message } : latest))
+    await update($, viewAtom, latest => (isSamePage(latest, view) ? { ...latest, errorMessage: result.message } : latest))
 
     return
   }
@@ -159,7 +163,7 @@ export async function loadMore($: EngineInterface): Promise<void> {
   const { rows, state } = layoutCommits(view.laneState, fresh)
 
   await update($, viewAtom, latest => {
-    if (!isCurrent(latest, view.generation)) {
+    if (!isSamePage(latest, view)) {
       return latest
     }
 
@@ -177,6 +181,7 @@ export async function loadMore($: EngineInterface): Promise<void> {
 const clearedList = (view: ViewState): ViewState => ({
   ...view,
   status: 'loading',
+  generation: view.generation + 1,
   commits: [],
   rows: [],
   laneState: emptyLaneState(),
