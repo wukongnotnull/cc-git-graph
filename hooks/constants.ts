@@ -1,6 +1,6 @@
 export const PLUGIN = 'cc-git-graph'
 export const PANE_ID = 'git-graph'
-export const PAGE_SIZE = 300
+export const PAGE_SIZE = 50
 export const ALL_BRANCHES = '*'
 
 export const LANE_WIDTH = 14
