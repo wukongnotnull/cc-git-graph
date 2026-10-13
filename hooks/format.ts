@@ -12,3 +12,8 @@ export function formatDate(timestamp: number): string {
 
   return `${pad(date.getDate())} ${month} ${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
+
+// Cuts to `max` characters, the last one an ellipsis, so a long name cannot push the description out of its cell.
+export function ellipsize(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, Math.max(max - 1, 1))}…`
+}

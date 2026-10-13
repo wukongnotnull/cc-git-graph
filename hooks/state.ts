@@ -16,5 +16,8 @@ export const initialView: ViewState = {
   expandedHash: null,
   detail: null,
   detailError: '',
+  fileDiff: null,
   generation: 0,
+  windowStart: 0,
+  windowStack: [],
 }

@@ -1,12 +1,68 @@
 import type { ElementTable } from 'claude-code'
 
-import type { ViewState } from '../../types'
+import type { FileDiff, ViewState } from '../../types'
+import { DETAIL_LABEL_WIDTH, DETAIL_WIDE_MIN } from '../constants'
 import { shortHash } from '../format'
 import type { Actions } from './actions'
+import { chipTitle, chipsOf, visibleRefs } from './chips'
 
 type DesktopUi = ElementTable<'desktop'>
 
-export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet<string>, actions: Actions) {
+// A label of fixed width and a value that takes the rest and wraps, so the values line up and a long one
+// (a 64-character hash, an e-mail address) breaks inside its own column instead of under the label.
+function field(ui: DesktopUi, label: string, value: string) {
+  const { Box, Text } = ui
+
+  return (
+    <Box key={`field-${label}`} flexDirection="row" gap={1}>
+      <Box width={DETAIL_LABEL_WIDTH} flexShrink={0}>
+        <Text bold>{label}</Text>
+      </Box>
+      <Box flexGrow={1} flexShrink={1} width={0}>
+        <Text wrap="wrap">{value}</Text>
+      </Box>
+    </Box>
+  )
+}
+
+// The diff of the chosen file, drawn by the engine's own diff view (line numbers, markers, add and remove colours).
+function renderFileDiff(ui: DesktopUi, diff: FileDiff | null, actions: Actions) {
+  const { Box, Button, Code, Text } = ui
+
+  if (diff === null) {
+    return null
+  }
+
+  const note = (text: string, color?: string) => <Text key="file-diff-note" dimColor={color === undefined} color={color}>{text}</Text>
+  let body
+
+  if (diff.isLoading) {
+    body = note('Loading…')
+  } else if (diff.error !== '') {
+    body = note(`无法读取这个文件的变更:${diff.error}`, 'error')
+  } else if (diff.isTooLarge) {
+    body = note('这个文件的变更太大,没有显示。')
+  } else if (diff.text === '') {
+    body = note('没有可显示的文本变更(二进制文件,或只改了文件权限)。')
+  } else {
+    body = <Code key="file-diff-code" source={diff.text} path={diff.path} format="diff" />
+  }
+
+  return (
+    <Box key="file-diff" flexDirection="column">
+      <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+        <Box flexGrow={1} flexShrink={1} width={0}>
+          <Text bold wrap="truncate-middle">{diff.path}</Text>
+        </Box>
+        <Button key="close-file-diff" label="✕ 关闭 diff" onPress={() => actions.toggleFileDiff(diff.path)} />
+      </Box>
+      {body}
+      {diff.isCut ? note('变更太长,只显示了前面的部分。') : null}
+    </Box>
+  )
+}
+
+export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet<string>, actions: Actions, bodyColumns: number) {
   const { Box, Button, Text } = ui
   const detail = view.detail
 
@@ -24,52 +80,57 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
     )
   }
 
+  // Chips in the row cut long names and hide extra refs; here every one is spelled out.
+  const refs = chipsOf(visibleRefs(view.commits.find(commit => commit.hash === detail.hash)?.refs ?? [], view.isRemoteShown)).map(chipTitle)
+
+  const isWide = bodyColumns >= DETAIL_WIDE_MIN
+  const close = <Button key="close-detail" label="✕ Close" onPress={() => actions.toggleCommit(detail.hash)} />
+
   return (
-    <Box key="detail" flexDirection="row" gap={2} borderStyle="round" paddingX={1}>
-      <Box flexDirection="column" flexGrow={1}>
-        <Box>
-          <Text bold>Commit: </Text>
-          <Text>{detail.hash}</Text>
-        </Box>
-        <Box gap={1}>
-          <Text bold>Parents:</Text>
-          {detail.parents.map(parent =>
-            loaded.has(parent) ? (
-              <Button key={`parent-${parent}`} label={shortHash(parent)} onPress={() => actions.scrollToCommit(parent)} />
-            ) : (
-              <Text key={`parent-text-${parent}`} dimColor>{shortHash(parent)}</Text>
-            ),
-          )}
-        </Box>
-        <Box>
-          <Text bold>Author: </Text>
-          <Text>{`${detail.author} <${detail.authorEmail}>`}</Text>
-        </Box>
-        <Box>
-          <Text bold>Committer: </Text>
-          <Text>{`${detail.committer} <${detail.committerEmail}>`}</Text>
-        </Box>
-        <Box>
-          <Text bold>Date: </Text>
-          <Text>{detail.date}</Text>
-        </Box>
-        <Box marginTop={1}>
-          <Text wrap="wrap">{detail.message}</Text>
-        </Box>
-        {view.detailError === '' ? null : <Text color="error">{view.detailError}</Text>}
-      </Box>
-      <Box flexDirection="column" flexGrow={1}>
-        <Box justifyContent="flex-end">
-          <Button key="close-detail" label="✕ Close" onPress={() => actions.toggleCommit(detail.hash)} />
-        </Box>
-        {detail.files.map(file => (
-          <Box key={`file-${file.path}`} gap={1}>
-            <Text wrap="truncate-middle">{file.path}</Text>
-            <Text color="diffAdded">{file.added === null ? '-' : `+${file.added}`}</Text>
-            <Text color="diffRemoved">{file.deleted === null ? '-' : `-${file.deleted}`}</Text>
+    <Box key="detail" flexDirection="column" gap={1} borderStyle="round" paddingX={1}>
+      <Box key="detail-body" flexDirection={isWide ? 'row' : 'column'} gap={isWide ? 2 : 1}>
+        <Box key="detail-fields" flexDirection="column" flexGrow={1} flexShrink={1} width={isWide ? 0 : undefined}>
+          {isWide ? null : <Box justifyContent="flex-end">{close}</Box>}
+          {field(ui, 'Commit:', detail.hash)}
+          <Box flexDirection="row" gap={1}>
+            <Box width={DETAIL_LABEL_WIDTH} flexShrink={0}>
+              <Text bold>Parents:</Text>
+            </Box>
+            <Box flexGrow={1} flexShrink={1} width={0} flexDirection="row" flexWrap="wrap" gap={1}>
+              {detail.parents.map(parent =>
+                loaded.has(parent) ? (
+                  <Button key={`parent-${parent}`} label={shortHash(parent)} onPress={() => actions.scrollToCommit(parent)} />
+                ) : (
+                  <Text key={`parent-text-${parent}`} dimColor>{shortHash(parent)}</Text>
+                ),
+              )}
+            </Box>
           </Box>
-        ))}
+          {refs.length === 0 ? null : <Box key="detail-refs">{field(ui, 'Refs:', refs.join('   '))}</Box>}
+          {field(ui, 'Author:', `${detail.author} <${detail.authorEmail}>`)}
+          {field(ui, 'Committer:', `${detail.committer} <${detail.committerEmail}>`)}
+          {field(ui, 'Date:', detail.date)}
+          <Box marginTop={1}>
+            <Text wrap="wrap">{detail.message}</Text>
+          </Box>
+          {view.detailError === '' ? null : <Text color="error">{view.detailError}</Text>}
+        </Box>
+        <Box key="detail-files" flexDirection="column" flexGrow={1} flexShrink={1} width={isWide ? 0 : undefined}>
+          {isWide ? <Box justifyContent="flex-end">{close}</Box> : null}
+          {detail.files.map(file => (
+            <Box key={`file-${file.path}`} flexDirection="row" gap={1}>
+              <Box flexGrow={1} flexShrink={1} width={0}>
+                <Button key={`file-diff-${file.path}`} plain onPress={() => actions.toggleFileDiff(file.path)}>
+                  <Text wrap="truncate-middle" bold={view.fileDiff?.path === file.path}>{`${view.fileDiff?.path === file.path ? '▾ ' : ''}${file.path}`}</Text>
+                </Button>
+              </Box>
+              <Text color="diffAdded">{file.added === null ? '-' : `+${file.added}`}</Text>
+              <Text color="diffRemoved">{file.deleted === null ? '-' : `-${file.deleted}`}</Text>
+            </Box>
+          ))}
+        </Box>
       </Box>
+      {renderFileDiff(ui, view.fileDiff, actions)}
     </Box>
   )
 }

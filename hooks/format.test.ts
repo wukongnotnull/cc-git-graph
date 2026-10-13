@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { formatDate, shortHash } from './format'
+import { ellipsize, formatDate, shortHash } from './format'
 
 describe('format', () => {
   test('shortHash keeps the first 8 characters', () => {
@@ -17,5 +17,11 @@ describe('format', () => {
     const seconds = new Date(2026, 0, 4, 9, 5).getTime() / 1000
 
     expect(formatDate(seconds)).toBe('04 Jan 2026 09:05')
+  })
+
+  test('ellipsize leaves a short text alone and cuts a long one to the limit', () => {
+    expect(ellipsize('main', 10)).toBe('main')
+    expect(ellipsize('abcdefghij', 10)).toBe('abcdefghij')
+    expect(ellipsize('abcdefghijk', 10)).toBe('abcdefghi…')
   })
 })

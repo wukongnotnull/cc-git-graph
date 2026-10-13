@@ -39,6 +39,16 @@ export type FileChange = {
   deleted: number | null
 }
 
+// The diff of one file of the open commit, shown under the detail card.
+export type FileDiff = {
+  path: string
+  text: string
+  isCut: boolean
+  isTooLarge: boolean
+  error: string
+  isLoading: boolean
+}
+
 export type CommitDetail = {
   hash: string
   parents: string[]
@@ -67,11 +77,15 @@ export type ViewState = {
   expandedHash: string | null
   detail: CommitDetail | null
   detailError: string
+  fileDiff: FileDiff | null
   generation: number
+  // The pane draws the rows from `windowStart` on, as many as fit; `windowStack` holds the starts it left behind.
+  windowStart: number
+  windowStack: number[]
 }
 
 declare module 'claude-code' {
   interface PluginState {
-    'cc-git-graph': { view: ViewState }
+    'cc-git-graph': { view: ViewState; branch: string }
   }
 }

@@ -15,19 +15,21 @@ export function renderToolbar(ui: DesktopUi, view: ViewState, actions: Actions) 
   ]
 
   return (
-    <Box flexDirection="row" gap={2} alignItems="center">
-      <Select
-        key="branch"
-        label="Branches:"
-        options={options}
-        value={view.branch}
-        onSelect={value => actions.selectBranch(value)}
-      />
-      <Button
-        key="remote"
-        label={`${view.isRemoteShown ? '☑' : '☐'} Show Remote Branches`}
-        onPress={() => actions.toggleRemote()}
-      />
+    <Box flexDirection="row" flexWrap="wrap" gap={2} alignItems="center" justifyContent="space-between">
+      <Box flexDirection="row" flexWrap="wrap" gap={2} alignItems="center">
+        <Select
+          key="branch"
+          label="Branches:"
+          options={options}
+          value={view.branch}
+          onSelect={value => actions.selectBranch(value)}
+        />
+        <Button
+          key="remote"
+          label={`${view.isRemoteShown ? '☑' : '☐'} Show Remote Branches`}
+          onPress={() => actions.toggleRemote()}
+        />
+      </Box>
       <Button key="refresh" label="↻ Refresh" onPress={() => actions.refresh()} />
     </Box>
   )

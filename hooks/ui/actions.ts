@@ -7,7 +7,10 @@ import {
   recordFailure,
   refresh,
   selectBranch,
+  showNewer,
+  showOlder,
   toggleCommit,
+  toggleFileDiff,
   toggleRemote,
 } from '../controller'
 
@@ -16,7 +19,10 @@ export type Actions = {
   toggleRemote(): void
   refresh(): void
   loadMore(): void
+  showOlder(): void
+  showNewer(): void
   toggleCommit(hash: string): void
+  toggleFileDiff(path: string): void
   scrollToCommit(hash: string): void
 }
 
@@ -44,7 +50,10 @@ export function makeActions($: EngineInterface): Actions {
     toggleRemote: () => guard(() => toggleRemote($)),
     refresh: () => guard(() => refresh($)),
     loadMore: () => guard(() => loadMore($)),
+    showOlder: () => guard(() => showOlder($)),
+    showNewer: () => guard(() => showNewer($)),
     toggleCommit: hash => guard(() => toggleCommit($, hash)),
+    toggleFileDiff: path => guard(() => toggleFileDiff($, path)),
     scrollToCommit: hash => {
       $.ui.scroll({ in: PANE_ID, to: { key: `row-${hash}` } }).catch(error => {
         $.ui.toast(`git-graph: ${error instanceof Error ? error.message : String(error)}`)
