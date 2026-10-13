@@ -1,7 +1,8 @@
 import type { ElementTable } from 'claude-code'
 
 import type { ViewState } from '../../types'
-import { AUTHOR_WIDTH, CELL_WIDTH_PX, DATE_WIDTH, HASH_WIDTH, LANE_WIDTH } from '../constants'
+import { AUTHOR_WIDTH, DATE_WIDTH, HASH_WIDTH } from '../constants'
+import { graphCells } from '../layout/graph-width'
 import { columnCount } from '../layout/lanes'
 import type { Actions } from './actions'
 import { renderDetail } from './commit-detail'
@@ -12,11 +13,9 @@ type DesktopUi = ElementTable<'desktop'>
 
 function renderHeader(ui: DesktopUi, columns: number) {
   const { Box, Text } = ui
-  const graphCells = Math.ceil((columns * LANE_WIDTH) / CELL_WIDTH_PX)
-
   return (
     <Box flexDirection="row">
-      <Box width={graphCells}>
+      <Box width={graphCells(columns)}>
         <Text bold>Graph</Text>
       </Box>
       <Box flexGrow={1}>

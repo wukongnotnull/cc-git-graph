@@ -7,7 +7,10 @@ export const LANE_WIDTH = 14
 export const ROW_HEIGHT = 18
 export const NODE_RADIUS = 4
 export const LINE_WIDTH = 2
-export const CELL_WIDTH_PX = 8
+// Measured in the desktop app: a Date column of 18 cells is 189 px.
+export const CELL_WIDTH_PX = 10.5
+// Enough cells for the "Graph" header label.
+export const GRAPH_MIN_CELLS = 6
 
 export const DATE_WIDTH = 18
 export const AUTHOR_WIDTH = 16

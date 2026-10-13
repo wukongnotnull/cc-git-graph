@@ -65,3 +65,13 @@ describe('rowSvg', () => {
     expect(rowSvg({ ...ROW, through: edges }, 40, false).length).toBeLessThan(131072)
   })
 })
+
+describe('rowSvg width override', () => {
+  test('a wider drawing keeps the lanes left-aligned', () => {
+    const svg = rowSvg(ROW, 1, false, 63)
+
+    expect(svg).toContain('width="63"')
+    expect(svg).toContain('viewBox="0 0 63 ')
+    expect(svg).toContain(`cx="${LANE_WIDTH / 2}"`)
+  })
+})

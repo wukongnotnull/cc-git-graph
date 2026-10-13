@@ -2,7 +2,7 @@ import type { On } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
-import { PAGE_SIZE, PANE_ID, PLUGIN } from '../constants'
+import { CELL_WIDTH_PX, GRAPH_MIN_CELLS, PAGE_SIZE, PANE_ID, PLUGIN } from '../constants'
 import { viewAtom } from '../controller'
 import { HASH, branchListing, forkHistoryLog, linearLog, serveGit } from '../testing/fixtures'
 import type { GitReply } from '../testing/fixtures'
@@ -273,5 +273,29 @@ describe('state key', () => {
   test('the controller atom and the plugin name agree with what the Pane reads', async () => {
     expect(viewAtom.ref).toEqual({ plugin: PLUGIN, key: 'view' })
     expect(PLUGIN).toBe('cc-git-graph')
+  })
+})
+
+describe('graph column and badges', () => {
+  test('the header cell width matches the row drawing width, at least the minimum', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+    const svg = await ui.find({ type: 'Svg' })
+    const header = await ui.find({ type: 'Text', text: /^Graph$/ })
+
+    expect(Number(svg?.props.width) / CELL_WIDTH_PX).toBeGreaterThanOrEqual(GRAPH_MIN_CELLS)
+    expect(header).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('ref badges are bracketed', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    expect(await ui.find({ type: 'Text', text: /\[feature\/x\]/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /\[origin\/main\]/ })).toBeDefined()
+    await ui.unmount()
   })
 })

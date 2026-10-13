@@ -50,8 +50,9 @@ function node(row: GraphRow, isHead: boolean): string {
   return `<circle cx="${x}" cy="${MID}" r="${NODE_RADIUS}" fill="${color}"/>`
 }
 
-export function rowSvg(row: GraphRow, columns: number, isHead: boolean): string {
-  const width = Math.max(columns, 1) * LANE_WIDTH
+// `widthPx` widens the drawing past its lanes; the lanes stay left-aligned inside it.
+export function rowSvg(row: GraphRow, columns: number, isHead: boolean, widthPx?: number): string {
+  const width = widthPx ?? Math.max(columns, 1) * LANE_WIDTH
 
   const parts = [
     ...row.through.map(throughLine),
