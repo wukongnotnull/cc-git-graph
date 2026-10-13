@@ -33,7 +33,7 @@ const PANE = {
 
 const serve = (on: On, opens: string[], calls: string[][] = []): void => {
   // Where the plugin passes, the engine draws its own band: nothing beneath the plugin does that in a test.
-  on('ui.render', () => ({ value: { type: 'engine' as const, ref: 0 } }))
+  on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
   on('ui.open', (_$, e) => {
     opens.push(e.id)
 
