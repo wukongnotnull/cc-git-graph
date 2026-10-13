@@ -6,6 +6,7 @@ import { HASH, branchListing, forkHistoryLog, serveGit } from '../testing/fixtur
 import type { GitReply } from '../testing/fixtures'
 
 const route = (args: readonly string[]): GitReply | undefined => {
+  if (args[0] === 'rev-parse' && args.includes('--abbrev-ref')) return { stdout: 'feat/ui-polish\n' }
   if (args[0] === 'rev-parse') return { stdout: 'true\n' }
   if (args[0] === 'for-each-ref') return { stdout: branchListing }
   if (args[0] === 'log') return { stdout: forkHistoryLog }
@@ -72,6 +73,28 @@ describe('AbovePrompt band', () => {
 
     expect(widths).toEqual([PANE_COLUMNS, PANE_COLUMNS])
     expect(PANE_COLUMNS).toBeGreaterThanOrEqual(80)
+    await band.unmount()
+  })
+
+  test('shows the branch the session is on beside the button', async ($, on) => {
+    serve(on, [])
+    const band = await $.ui.mount({ plugin: PLUGIN, surface: 'desktop', component: 'AbovePrompt', props: BAND })
+
+    await band.press({ key: 'open-graph' })
+
+    expect(await band.find({ type: 'Text', text: /⎇ feat\/ui-polish/ })).toBeDefined()
+    await band.unmount()
+  })
+
+  test('shows nothing beside the button outside a repository', async ($, on) => {
+    on('ui.open', () => ({ value: { isPlaced: true as const } }))
+    serveGit(on, () => ({ exitCode: 128, stderr: 'fatal: not a git repository (or any of the parent directories): .git' }))
+    const band = await $.ui.mount({ plugin: PLUGIN, surface: 'desktop', component: 'AbovePrompt', props: BAND })
+
+    await band.press({ key: 'open-graph' })
+
+    expect(await band.find({ key: 'open-graph' })).toBeDefined()
+    expect(await band.find({ key: 'current-branch' })).toBeUndefined()
     await band.unmount()
   })
 

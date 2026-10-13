@@ -3,6 +3,8 @@ import type { ElementTable, EngineInterface, Register } from 'claude-code'
 import type { ViewState } from '../types'
 import { PANE_COLUMNS, PANE_ID } from './constants'
 import { openGraph } from './controller'
+import { parseCurrentBranch } from './git/current-branch'
+import { runGit } from './git/run-git'
 import { initialView } from './state'
 import { makeActions } from './ui/actions'
 import { renderBand } from './ui/band'
@@ -10,6 +12,7 @@ import { renderPane } from './ui/pane'
 
 const OPENED_TEXT = 'Git Graph opened.'
 const VIEW_REF = { plugin: 'cc-git-graph', key: 'view' } as const
+const BRANCH_REF = { plugin: 'cc-git-graph', key: 'branch' } as const
 
 // The hooks loader follows `$` only into functions declared in this file, never across an
 // import, and refuses `$` being spread or returned. It also wants every state reference
@@ -20,7 +23,7 @@ const VIEW_REF = { plugin: 'cc-git-graph', key: 'view' } as const
 function engineOf($: EngineInterface): EngineInterface {
   const nouns = {
     process: {
-      run: (argv: readonly string[]) => $.process.run(argv),
+      run: (argv: readonly string[], init?: Parameters<EngineInterface['process']['run']>[1]) => $.process.run(argv, init),
     },
     state: {
       get: () => $.state.get(VIEW_REF),
@@ -36,9 +39,19 @@ function engineOf($: EngineInterface): EngineInterface {
   return nouns as unknown as EngineInterface
 }
 
+// The branch the session's directory is on, kept for the band above the prompt; empty outside a repository.
+// The agent can switch branches during a turn, so this runs again when a turn ends.
+async function refreshBranch($: EngineInterface): Promise<void> {
+  const result = await runGit(engineOf($), ['rev-parse', '--abbrev-ref', 'HEAD'])
+
+  await $.state.set(BRANCH_REF, result.ok ? parseCurrentBranch(result.stdout) : '')
+}
+
 // Opens the pane and loads the graph. Both the command and the band's button come here;
 // `$` has to stay a plain parameter so the hooks loader can follow it.
 async function openBoard($: EngineInterface): Promise<string> {
+  await refreshBranch($)
+
   const opened = await $.ui.open({ id: PANE_ID, title: 'Git Graph', columns: PANE_COLUMNS })
 
   if (!opened.isPlaced) {
@@ -58,6 +71,13 @@ async function openBoard($: EngineInterface): Promise<string> {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'git-graph', description: 'Open the Git graph board' })
+    await refreshBranch($)
+
+    return next(e)
+  })
+
+  on('turn.complete', async ($, e, next) => {
+    await refreshBranch($)
 
     return next(e)
   })
@@ -72,8 +92,9 @@ export const register: Register = on => {
     }
 
     const ui = $.ui.resolve(e) as ElementTable<'desktop'>
+    const { value: branch = '' } = await $.state.get(BRANCH_REF)
 
-    return renderBand(ui, () => {
+    return renderBand(ui, branch, () => {
       openBoard($).then(text => {
         if (text !== OPENED_TEXT) {
           $.ui.toast(text)

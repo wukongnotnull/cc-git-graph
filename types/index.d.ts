@@ -75,6 +75,6 @@ export type ViewState = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'cc-git-graph': { view: ViewState }
+    'cc-git-graph': { view: ViewState; branch: string }
   }
 }
