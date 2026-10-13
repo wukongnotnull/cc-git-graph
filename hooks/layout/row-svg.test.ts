@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import type { GraphRow } from '../../types'
-import { LANE_WIDTH, ROW_HEIGHT } from '../constants'
+import { LANE_COLORS, LANE_WIDTH, ROW_HEIGHT } from '../constants'
 import { rowSvg } from './row-svg'
 
 const ROW: GraphRow = {
@@ -56,7 +56,7 @@ describe('rowSvg', () => {
   })
 
   test('cycles lane colors past the palette length', () => {
-    expect(rowSvg({ ...ROW, color: 8 }, 1, false)).toBe(rowSvg({ ...ROW, color: 0 }, 1, false))
+    expect(rowSvg({ ...ROW, color: LANE_COLORS.length }, 1, false)).toBe(rowSvg({ ...ROW, color: 0 }, 1, false))
   })
 
   test('stays far below the SVG size limit even for a wide row', () => {
