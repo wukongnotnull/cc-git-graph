@@ -26,8 +26,8 @@ function field(ui: DesktopUi, label: string, value: string) {
 }
 
 // The diff of the chosen file, drawn by the engine's own diff view (line numbers, markers, add and remove colours).
-function renderFileDiff(ui: DesktopUi, diff: FileDiff | null) {
-  const { Box, Code, Text } = ui
+function renderFileDiff(ui: DesktopUi, diff: FileDiff | null, actions: Actions) {
+  const { Box, Button, Code, Text } = ui
 
   if (diff === null) {
     return null
@@ -50,7 +50,12 @@ function renderFileDiff(ui: DesktopUi, diff: FileDiff | null) {
 
   return (
     <Box key="file-diff" flexDirection="column">
-      <Text bold>{diff.path}</Text>
+      <Box flexDirection="row" alignItems="center" justifyContent="space-between" gap={1}>
+        <Box flexGrow={1} flexShrink={1} width={0}>
+          <Text bold wrap="truncate-middle">{diff.path}</Text>
+        </Box>
+        <Button key="close-file-diff" label="✕ 关闭 diff" onPress={() => actions.toggleFileDiff(diff.path)} />
+      </Box>
       {body}
       {diff.isCut ? note('变更太长,只显示了前面的部分。') : null}
     </Box>
@@ -125,7 +130,7 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
           ))}
         </Box>
       </Box>
-      {renderFileDiff(ui, view.fileDiff)}
+      {renderFileDiff(ui, view.fileDiff, actions)}
     </Box>
   )
 }

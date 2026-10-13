@@ -494,6 +494,29 @@ describe('graph column and badges', () => {
     await ui.unmount()
   })
 
+  test('the diff has its own close button, which leaves the commit detail open', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    await ui.press({ key: `commit-${HASH.m}` })
+
+    expect(await ui.find({ key: 'close-file-diff' })).toBeUndefined()
+
+    await ui.press({ key: 'file-diff-CLAUDE.md' })
+
+    expect(await ui.find({ key: 'close-file-diff' })).toBeDefined()
+    expect(await ui.find({ type: 'Code' })).toBeDefined()
+
+    await ui.press({ key: 'close-file-diff' })
+
+    expect(await ui.find({ type: 'Code' })).toBeUndefined()
+    expect(await ui.find({ key: 'close-file-diff' })).toBeUndefined()
+    expect(await ui.find({ key: 'close-detail' })).toBeDefined()
+    await ui.press({ key: 'close-detail' })
+    await ui.unmount()
+  })
+
   test('closing the commit also closes its file diff', async ($, on) => {
     serve(on, route)
     await $.command.run(RUN)
