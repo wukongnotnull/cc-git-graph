@@ -1,7 +1,7 @@
 import type { ElementTable, Register } from 'claude-code'
 
 const PANE = 'git-graph'
-const HEIGHTS = [18, 20, 22, 24] as const
+const HEIGHTS = [14, 16, 18, 20, 22, 24, 28, 32] as const
 const ROWS = 300
 
 const lineSvg = (height: number): string =>
@@ -17,9 +17,14 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'git-graph' }, async $ => {
-    await $.ui.open({ id: PANE, title: 'Git Graph probe' })
+    const opened = await $.ui.open({ id: PANE, title: 'Git Graph probe' })
+    const surfaces = await $.session.surfaces()
 
-    return { text: 'probe opened' }
+    return {
+      text: opened.isPlaced
+        ? `probe placed on ${surfaces.join(',')}`
+        : `probe NOT placed on ${surfaces.join(',')}: ${opened.reason}`,
+    }
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
