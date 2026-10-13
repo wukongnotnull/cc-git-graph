@@ -1,5 +1,7 @@
 export const PLUGIN = 'cc-git-graph'
 export const PANE_ID = 'git-graph'
+// The width the docked pane asks for: room for every column. A width the person has dragged it to wins.
+export const PANE_COLUMNS = 120
 export const PAGE_SIZE = 50
 // A git call that has not returned by then is reported as a failure instead of leaving the pane on Loading.
 export const GIT_TIMEOUT_MS = 10_000
