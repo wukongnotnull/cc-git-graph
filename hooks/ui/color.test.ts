@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { darken, readableOn } from './color'
+import { darken, lighten, readableOn } from './color'
 
 describe('darken', () => {
   test('mixes with black', () => {
@@ -22,5 +22,17 @@ describe('readableOn', () => {
     expect(readableOn('#e69f00')).toBe('#1f2328')
     expect(readableOn('#000000')).toBe('#ffffff')
     expect(readableOn('#ffffff')).toBe('#1f2328')
+  })
+})
+
+describe('lighten', () => {
+  test('mixes with white', () => {
+    expect(lighten('#000000', 0.5)).toBe('#808080')
+    expect(lighten('#0072b2', 0)).toBe('#0072b2')
+    expect(lighten('#0072b2', 1)).toBe('#ffffff')
+  })
+
+  test('leaves a colour that is not #rrggbb as it was', () => {
+    expect(lighten('suggestion', 0.5)).toBe('suggestion')
   })
 })

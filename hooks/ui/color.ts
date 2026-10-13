@@ -45,3 +45,22 @@ export function readableOn(background: string): string {
 
   return againstLight >= againstDark ? LIGHT_TEXT : DARK_TEXT
 }
+
+// Mixes a `#rrggbb` colour with white by `amount` (0 keeps it, 1 is white); anything else comes back as it was.
+export function lighten(color: string, amount: number): string {
+  const match = HEX.exec(color)
+
+  if (match === null) {
+    return color
+  }
+
+  const channel = (hex: string | undefined): string => {
+    const value = parseInt(hex ?? '0', 16)
+
+    return Math.round(value + (255 - value) * amount)
+      .toString(16)
+      .padStart(2, '0')
+  }
+
+  return `#${channel(match[1])}${channel(match[2])}${channel(match[3])}`
+}

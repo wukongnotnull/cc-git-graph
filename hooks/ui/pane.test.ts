@@ -2,7 +2,8 @@ import type { On } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
-import { CELL_WIDTH_PX, GRAPH_MIN_CELLS, PAGE_SIZE, PANE_ID, PLUGIN } from '../constants'
+import { CELL_WIDTH_PX, GRAPH_MIN_CELLS, LANE_COLORS, PAGE_SIZE, PANE_ID, PLUGIN } from '../constants'
+import { lighten } from './color'
 import { viewAtom } from '../controller'
 import { HASH, branchListing, forkHistoryLog, linearLog, recordOf, serveGit } from '../testing/fixtures'
 import type { GitReply } from '../testing/fixtures'
@@ -409,6 +410,18 @@ describe('graph column and badges', () => {
     await ui.press({ key: 'remote' })
 
     expect(await chipNamed(ui, 'main (origin)')).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('a remote branch without a local twin is a pale tint of its lane colour', async ($, on) => {
+    const log = recordOf(HASH.m, [], 'Ada', 1760000400, 'origin/main', 'Merge')
+    serve(on, args => (args[0] === 'log' ? { stdout: log } : route(args)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+    const source = String((await chipNamed(ui, 'origin/main'))?.props.source)
+
+    expect(source).toContain(`fill="${lighten(LANE_COLORS[0] ?? '', 0.78)}"`)
+    expect(source).toContain('fill="#1f2328"')
     await ui.unmount()
   })
 

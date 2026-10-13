@@ -10,16 +10,15 @@ import { rowSvg } from '../layout/row-svg'
 import type { Actions } from './actions'
 import { chipTitle, chipsOf, limitChips, visibleRefs } from './chips'
 import type { Chip } from './chips'
-import { darken, readableOn } from './color'
+import { darken, lighten, readableOn } from './color'
 import type { ColumnPlan } from './columns'
 
 type DesktopUi = ElementTable<'desktop'>
 
 const TAG_COLOR = '#c98a1b'
 const REMOTE_COLOR = '#6e7681'
-// A remote branch with no local twin is a quiet outline of a chip: pale, dark text, no bold.
-const REMOTE_ONLY_BACKGROUND = '#d0d7de'
-const REMOTE_ONLY_TEXT = '#24292f'
+// A remote branch with no local twin is a quiet chip: its lane colour mixed this far with white, dark text, no bold.
+const REMOTE_ONLY_TINT = 0.78
 
 export function isHeadCommit(commit: Commit): boolean {
   return commit.refs.some(ref => ref.isCurrent)
@@ -30,13 +29,9 @@ const LOCAL_SHADE = 0.12
 const REMOTE_SHADE = 0.4
 const MORE_COLOR = '#8b949e'
 
-// A chip takes the colour of the lane its commit sits on; a remote branch with no local twin is grey, a tag amber.
+// A chip takes the colour of the lane its commit sits on, a tag is amber.
 function chipColor(chip: Chip, lane: number): string {
-  if (chip.kind === 'tag') {
-    return TAG_COLOR
-  }
-
-  return chip.kind === 'remote' ? REMOTE_COLOR : (LANE_COLORS[lane % LANE_COLORS.length] ?? REMOTE_COLOR)
+  return chip.kind === 'tag' ? TAG_COLOR : (LANE_COLORS[lane % LANE_COLORS.length] ?? REMOTE_COLOR)
 }
 
 // Not `isInteractive`: that puts the SVG in a sandboxed frame, which reloads each time the pane redraws (every
@@ -58,7 +53,7 @@ function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   const marker = chip.isCurrent ? '● ' : chip.kind === 'tag' ? '◆ ' : ''
   const isRemoteOnly = chip.kind === 'remote'
 
-  const local = isRemoteOnly ? REMOTE_ONLY_BACKGROUND : darken(color, LOCAL_SHADE)
+  const local = isRemoteOnly ? lighten(color, REMOTE_ONLY_TINT) : darken(color, LOCAL_SHADE)
   const remote = darken(color, REMOTE_SHADE)
 
   const svg = chipSvg({
@@ -66,7 +61,7 @@ function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
     remote: chip.remotes.length === 0 ? undefined : chip.remotes.join(' '),
     color: local,
     remoteColor: remote,
-    textColor: isRemoteOnly ? REMOTE_ONLY_TEXT : readableOn(local),
+    textColor: readableOn(local),
     remoteTextColor: readableOn(remote),
     isBold: !isRemoteOnly,
     title,
