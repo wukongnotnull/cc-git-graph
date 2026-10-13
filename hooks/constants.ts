@@ -1,5 +1,8 @@
 export const PLUGIN = 'cc-git-graph'
 export const PANE_ID = 'git-graph'
+// The width the docked pane asks for when it opens: about what every column needs. A request, not a grant: a width
+// the person has dragged the pane to, or kept from an earlier open, wins.
+export const PANE_COLUMNS = 100
 export const PAGE_SIZE = 50
 // The engine draws a pane's tree only up to about 200,000 characters and drops the rest (measured: 100 rows came
 // to 199,692 and the 101st never showed). The pane draws a window of rows within this budget, which leaves room
