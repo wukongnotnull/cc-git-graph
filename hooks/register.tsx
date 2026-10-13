@@ -5,8 +5,10 @@ import { PANE_ID } from './constants'
 import { openGraph } from './controller'
 import { initialView } from './state'
 import { makeActions } from './ui/actions'
+import { renderBand } from './ui/band'
 import { renderPane } from './ui/pane'
 
+const OPENED_TEXT = 'Git Graph opened.'
 const VIEW_REF = { plugin: 'cc-git-graph', key: 'view' } as const
 
 // The hooks loader follows `$` only into functions declared in this file, never across an
@@ -34,6 +36,25 @@ function engineOf($: EngineInterface): EngineInterface {
   return nouns as unknown as EngineInterface
 }
 
+// Opens the pane and loads the graph. Both the command and the band's button come here;
+// `$` has to stay a plain parameter so the hooks loader can follow it.
+async function openBoard($: EngineInterface): Promise<string> {
+  const opened = await $.ui.open({ id: PANE_ID, title: 'Git Graph' })
+
+  if (!opened.isPlaced) {
+    return 'Git Graph: this surface cannot show the panel.'
+  }
+
+  try {
+    await openGraph(engineOf($))
+  } catch (error) {
+    // openGraph records load failures itself; this catches a failure of the state calls.
+    return `Git Graph: ${error instanceof Error ? error.message : String(error)}`
+  }
+
+  return OPENED_TEXT
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'git-graph', description: 'Open the Git graph board' })
@@ -42,20 +63,23 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'git-graph' }, async $ => {
-    const opened = await $.ui.open({ id: PANE_ID, title: 'Git Graph' })
+    return { text: await openBoard($) }
+  })
 
-    if (!opened.isPlaced) {
-      return { text: 'Git Graph: this surface cannot show the panel.' }
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (e.surface !== 'desktop' || e.props.hasSurvey) {
+      return next(e)
     }
 
-    try {
-      await openGraph(engineOf($))
-    } catch (error) {
-      // openGraph records load failures itself; this catches a failure of the state calls.
-      return { text: `Git Graph: ${error instanceof Error ? error.message : String(error)}` }
-    }
+    const ui = $.ui.resolve(e) as ElementTable<'desktop'>
 
-    return { text: 'Git Graph opened.' }
+    return renderBand(ui, () => {
+      openBoard($).then(text => {
+        if (text !== OPENED_TEXT) {
+          $.ui.toast(text)
+        }
+      })
+    })
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE_ID }, async ($, e) => {
