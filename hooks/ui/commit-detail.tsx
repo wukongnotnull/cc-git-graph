@@ -10,6 +10,8 @@ type DesktopUi = ElementTable<'desktop'>
 
 // A label of fixed width and a value that takes the rest and wraps, so the values line up and a long one
 // (a 64-character hash, an e-mail address) breaks inside its own column instead of under the label.
+// Put it straight in a column, never in a row Box of its own: a row sizes it to its content, and the value, which
+// starts from zero width, collapses to a word per line.
 function field(ui: DesktopUi, label: string, value: string) {
   const { Box, Text } = ui
 
@@ -106,7 +108,7 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
               )}
             </Box>
           </Box>
-          {refs.length === 0 ? null : <Box key="detail-refs">{field(ui, 'Refs:', refs.join('   '))}</Box>}
+          {refs.length === 0 ? null : field(ui, 'Refs:', refs.join('   '))}
           {field(ui, 'Author:', `${detail.author} <${detail.authorEmail}>`)}
           {field(ui, 'Committer:', `${detail.committer} <${detail.committerEmail}>`)}
           {field(ui, 'Date:', detail.date)}
