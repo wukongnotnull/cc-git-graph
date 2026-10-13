@@ -299,6 +299,12 @@ Pane 树的结构(自上而下):
 | 3 | 滚动 | 300 行滚动正常;「Scroll to row N」可用 |
 | 4 | `Svg` 渲染 | 颜色和圆点正常,与文字大致垂直居中 |
 
+### 验收后的修正(2026-10-13,桌面应用目视验收)
+
+- **字符单元宽度已实测**:`CELL_WIDTH_PX = 10.5`(日期列 18 个单元 = 189 px,作者列 16 个单元 = 168 px)。此前的默认值 8 是错的,导致表头「Graph」与「Description」重叠。
+- **图谱列按整数单元计算**:`graphCells = max(GRAPH_MIN_CELLS = 6, ceil(columns × LANE_WIDTH / CELL_WIDTH_PX))`,每行 `Svg` 宽度为 `graphCells × CELL_WIDTH_PX` 像素,表头与行共用同一个函数 `hooks/layout/graph-width.ts`。
+- **徽章样式**:桌面 surface 不显示 `inverse`,改为加粗、按主题着色并加方括号,如 `[main]`;当前分支加下划线。
+
 附带发现:
 - 面板在桌面应用里停靠在右侧,标题为 `$.ui.open` 的 `title`。
 - 在热重载后的旧会话里命令可能丢失,面板也可能不显示;**新会话**里一切正常。验证 mod 时用新会话。
