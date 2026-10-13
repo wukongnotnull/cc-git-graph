@@ -4,7 +4,7 @@ import type { TestBody } from 'claude-code/testing'
 
 import { CELL_WIDTH_PX, GRAPH_MIN_CELLS, PAGE_SIZE, PANE_ID, PLUGIN } from '../constants'
 import { viewAtom } from '../controller'
-import { HASH, branchListing, forkHistoryLog, linearLog, serveGit } from '../testing/fixtures'
+import { HASH, branchListing, forkHistoryLog, linearLog, recordOf, serveGit } from '../testing/fixtures'
 import type { GitReply } from '../testing/fixtures'
 
 const META = [HASH.m, `${HASH.a} ${HASH.b}`, 'Ada', 'ada@x.com', 'Bob', 'bob@x.com', '2026-10-11 16:34:41 +0800', 'Merge branch\n\nbody\n'].join('\x1f')
@@ -298,6 +298,18 @@ describe('graph column and badges', () => {
     expect(await ui.find({ type: 'Text', text: /\smain\s/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /^\s*origin\s*$/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /origin\/main/ })).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('a row that cuts a ref name offers the full names on hover, and a row that cuts nothing does not', async ($, on) => {
+    const longName = 'feat/' + 'very-long-branch-name-'.repeat(2)
+    const log = recordOf(HASH.m, [HASH.a], 'Ada', 1760000400, `HEAD -> ${longName}`, 'Merge') + recordOf(HASH.a, [], 'Ada', 1760000300, 'main', 'root')
+    serve(on, args => (args[0] === 'log' ? { stdout: log } : route(args)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    expect(await ui.find({ key: `refs-tip-${HASH.m}` })).toBeDefined()
+    expect(await ui.find({ key: `refs-tip-${HASH.a}` })).toBeUndefined()
     await ui.unmount()
   })
 

@@ -14,7 +14,8 @@ export const CELL_WIDTH_PX = 10.5
 // Enough cells for the "Graph" header label.
 export const GRAPH_MIN_CELLS = 6
 
-export const DATE_WIDTH = 18
+// A date such as `13 Oct 2026 19:47` is 17 characters; the cells over that keep it off the author column.
+export const DATE_WIDTH = 21
 export const AUTHOR_WIDTH = 16
 export const HASH_WIDTH = 9
 // The description is never squeezed below this many cells; the other columns give way first.

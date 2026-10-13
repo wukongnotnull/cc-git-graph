@@ -3,10 +3,10 @@ import type { ElementTable } from 'claude-code'
 import type { Commit, GraphRow } from '../../types'
 import { AUTHOR_WIDTH, CHIP_LABEL_MAX, DATE_WIDTH, HASH_WIDTH, LANE_COLORS, MAX_CHIPS, ROW_HEIGHT } from '../constants'
 import { ellipsize, formatDate, shortHash } from '../format'
-import { graphWidthPx } from '../layout/graph-width'
+import { graphCells, graphWidthPx } from '../layout/graph-width'
 import { rowSvg } from '../layout/row-svg'
 import type { Actions } from './actions'
-import { chipsOf, limitChips } from './chips'
+import { chipTitle, chipsOf, hasCutChips, limitChips } from './chips'
 import type { Chip } from './chips'
 import { darken } from './color'
 import type { ColumnPlan } from './columns'
@@ -15,6 +15,9 @@ type DesktopUi = ElementTable<'desktop'>
 
 const TAG_COLOR = '#c98a1b'
 const REMOTE_COLOR = '#6e7681'
+// A remote branch with no local twin is a quiet outline of a chip: pale, dark text, no bold.
+const REMOTE_ONLY_BACKGROUND = '#d0d7de'
+const REMOTE_ONLY_TEXT = '#24292f'
 
 export function isHeadCommit(commit: Commit): boolean {
   return commit.refs.some(ref => ref.isCurrent)
@@ -38,9 +41,16 @@ function chipColor(chip: Chip, lane: number): string {
 function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   const { Text } = ui
   const color = chipColor(chip, lane)
-  const marker = chip.isCurrent ? '● ' : chip.kind === 'tag' ? '◆ ' : ''
   const key = `chip-${chip.kind}-${chip.label}`
 
+  if (chip.kind === 'remote') {
+    return [
+      <Text key={key} backgroundColor={REMOTE_ONLY_BACKGROUND} color={REMOTE_ONLY_TEXT}>{` ${ellipsize(chip.label, CHIP_LABEL_MAX)} `}</Text>,
+      <Text key={`${key}-gap`}>{' '}</Text>,
+    ]
+  }
+
+  const marker = chip.isCurrent ? '● ' : chip.kind === 'tag' ? '◆ ' : ''
   return [
     <Text key={key} backgroundColor={darken(color, LOCAL_SHADE)} color={CHIP_TEXT} bold>{` ${marker}${ellipsize(chip.label, CHIP_LABEL_MAX)} `}</Text>,
     chip.remotes.length === 0 ? null : (
@@ -48,6 +58,23 @@ function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
     ),
     <Text key={`${key}-gap`}>{' '}</Text>,
   ]
+}
+
+// A hover reveal: the Box stays hidden until the pointer is over the chips (the same scope), then shows every
+// full name above the row. Drawn only for a row that cuts or hides a ref.
+function renderFullNames(ui: DesktopUi, commit: Commit, scope: string, left: number) {
+  const { Box, Text } = ui
+  const chips = chipsOf(commit.refs)
+
+  if (!hasCutChips(chips, MAX_CHIPS, CHIP_LABEL_MAX)) {
+    return null
+  }
+
+  return (
+    <Box key={`refs-tip-${commit.hash}`} position="absolute" top={-1} left={left} display="none" hover={{ scope, display: 'flex' }}>
+      <Text inverse>{` ${chips.map(chipTitle).join('   ')} `}</Text>
+    </Box>
+  )
 }
 
 function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
@@ -65,14 +92,14 @@ export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns:
   const isDim = row.isMerge
 
   return (
-    <Box key={`row-${commit.hash}`} flexDirection="row" alignItems="center">
+    <Box key={`row-${commit.hash}`} position="relative" flexDirection="row" alignItems="center">
       <Svg
         source={rowSvg(row, columns, isHeadCommit(commit), graphWidthPx(columns))}
         width={graphWidthPx(columns)}
         height={ROW_HEIGHT}
         alt={`Graph for ${shortHash(commit.hash)}`} />
       <Box flexGrow={1} flexDirection="row" overflow="hidden">
-        <Box flexShrink={0} flexDirection="row">
+        <Box flexShrink={0} flexDirection="row" hover={{ scope: `refs-${commit.hash}` }}>
           {renderChips(ui, commit, row.color)}
         </Box>
         <Box flexGrow={1} flexShrink={1} overflow="hidden">
@@ -86,6 +113,7 @@ export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns:
           </Button>
         </Box>
       </Box>
+      {renderFullNames(ui, commit, `refs-${commit.hash}`, graphCells(columns))}
       {plan.isDateShown ? (
         <Box width={DATE_WIDTH}>
           <Text dimColor={isDim} wrap="truncate">{formatDate(commit.timestamp)}</Text>
