@@ -1,0 +1,6 @@
+{
+  "name": "cc-git-graph",
+  "version": "0.1.0",
+  "description": "Read-only Git graph board for Claude Code Desktop",
+  "types": "./types/index.d.ts"
+}

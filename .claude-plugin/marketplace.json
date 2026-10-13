@@ -1,0 +1,13 @@
+{
+  "name": "cc-git-graph",
+  "description": "Git graph board mod for Claude Code",
+  "owner": { "name": "wukongnotnull" },
+  "plugins": [
+    {
+      "name": "cc-git-graph",
+      "description": "Read-only Git graph board for Claude Code Desktop",
+      "version": "0.1.0",
+      "source": "./"
+    }
+  ]
+}
