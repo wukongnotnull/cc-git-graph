@@ -213,3 +213,162 @@ describe('toggleCommit', () => {
     expect(view.detailError).toBe('fatal: bad object')
   })
 })
+
+const MICROTASK_TURNS = 50
+
+// Lets every already-resolvable promise chain run, without timers.
+async function settle(): Promise<void> {
+  for (let turn = 0; turn < MICROTASK_TURNS; turn += 1) {
+    await Promise.resolve()
+  }
+}
+
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve: (value: T) => void = () => undefined
+  const promise = new Promise<T>(done => {
+    resolve = done
+  })
+
+  return { promise, resolve }
+}
+
+const pagedRoute = (all: string[]) => (args: readonly string[]): GitReply | undefined => {
+  if (args[0] === 'rev-parse') return { stdout: 'true\n' }
+  if (args[0] === 'for-each-ref') return { stdout: branchListing }
+  if (args[0] === 'log') return { stdout: all.slice(skipOf(args), skipOf(args) + takeOf(args)).join('') }
+
+  return undefined
+}
+
+describe('superseded results', () => {
+  test('a stale loadFirst that succeeds late is discarded', async ($, on) => {
+    const gate = deferred<GitReply>()
+    let logCalls = 0
+    const engine = serveGit(on, args => {
+      if (args[0] === 'log' && (logCalls += 1) === 2) return gate.promise
+
+      return forkRoute(args)
+    })
+    await loadFirst(engine($))
+    const stale = refresh(engine($))
+    await settle()
+    await selectBranch(engine($), 'feature/x')
+    gate.resolve({ stdout: linearLog(1).join('') })
+    await stale
+    const view = await read(engine($), viewAtom)
+
+    expect(view.branch).toBe('feature/x')
+    expect(view.commits.map(commit => commit.hash)).toEqual([HASH.m, HASH.a, HASH.b, HASH.r])
+  })
+
+  test('a stale loadFirst that fails late does not mark the newer state as an error', async ($, on) => {
+    const gate = deferred<GitReply>()
+    let logCalls = 0
+    const engine = serveGit(on, args => {
+      if (args[0] === 'log' && (logCalls += 1) === 2) return gate.promise
+
+      return forkRoute(args)
+    })
+    await loadFirst(engine($))
+    const stale = refresh(engine($))
+    await settle()
+    await refresh(engine($))
+    gate.resolve({ exitCode: 1, stderr: 'fatal: boom' })
+    await stale
+    const view = await read(engine($), viewAtom)
+
+    expect(view.status).toBe('ready')
+    expect(view.errorMessage).toBe('')
+  })
+
+  test('selecting a branch shows loading, never an empty ready list', async ($, on) => {
+    const gate = deferred<GitReply>()
+    let logCalls = 0
+    const engine = serveGit(on, args => {
+      if (args[0] === 'log' && (logCalls += 1) === 2) return gate.promise
+
+      return forkRoute(args)
+    })
+    await loadFirst(engine($))
+    const pending = selectBranch(engine($), 'main')
+    await settle()
+    const during = await read(engine($), viewAtom)
+    gate.resolve({ stdout: forkHistoryLog })
+    await pending
+
+    expect(during.status).toBe('loading')
+    expect(during.commits).toEqual([])
+  })
+
+  for (const [name, action] of [
+    ['refresh', refresh],
+    ['toggleRemote', toggleRemote],
+  ] as const) {
+    test(`a slow loadMore finishing after ${name} is discarded`, async ($, on) => {
+    const all = linearLog(PAGE_SIZE + 5)
+    const gate = deferred<GitReply>()
+    let logCalls = 0
+    const route = pagedRoute(all)
+    const engine = serveGit(on, args => {
+      if (args[0] === 'log' && (logCalls += 1) === 2) return gate.promise
+
+      return route(args)
+    })
+    await loadFirst(engine($))
+    const slow = loadMore(engine($))
+    await settle()
+    await action(engine($))
+    gate.resolve({ stdout: all.slice(PAGE_SIZE).join('') })
+    await slow
+    const view = await read(engine($), viewAtom)
+
+    expect(view.commits).toHaveLength(PAGE_SIZE)
+    expect(view.rows).toHaveLength(PAGE_SIZE)
+    expect(view.laneState.lanes.filter(lane => lane !== null)).toHaveLength(1)
+  })
+  }
+
+  test('a loadMore failure on a stale generation does not overwrite errorMessage', async ($, on) => {
+    const all = linearLog(PAGE_SIZE + 5)
+    const gate = deferred<GitReply>()
+    let logCalls = 0
+    const route = pagedRoute(all)
+    const engine = serveGit(on, args => {
+      if (args[0] === 'log' && (logCalls += 1) === 2) return gate.promise
+
+      return route(args)
+    })
+    await loadFirst(engine($))
+    const slow = loadMore(engine($))
+    await settle()
+    await refresh(engine($))
+    gate.resolve({ exitCode: 1, stderr: 'fatal: late failure' })
+    await slow
+
+    expect((await read(engine($), viewAtom)).errorMessage).toBe('')
+  })
+})
+
+describe('detail errors and serialization', () => {
+  test('keeps the detail and reports a file-list failure', async ($, on) => {
+    const engine = serveGit(on, args =>
+      args[0] === 'show' && args.includes('--numstat') ? { exitCode: 1, stderr: 'fatal: no numstat' } : forkRoute(args),
+    )
+    await loadFirst(engine($))
+    await toggleCommit(engine($), HASH.m)
+    const view = await read(engine($), viewAtom)
+
+    expect(view.detail?.author).toBe('Ada')
+    expect(view.detail?.files).toEqual([])
+    expect(view.detailError).toBe('Could not read the file list: fatal: no numstat')
+  })
+
+  test('the view state is JSON-serializable', async ($, on) => {
+    const engine = serveGit(on, forkRoute)
+    await loadFirst(engine($))
+    await toggleCommit(engine($), HASH.m)
+    const view = await read(engine($), viewAtom)
+
+    expect(JSON.parse(JSON.stringify(view))).toEqual(view)
+  })
+})

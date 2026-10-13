@@ -52,12 +52,20 @@ async function fetchPage($: EngineInterface, view: ViewState, offset: number): P
   return { ok: true, page: { commits: parsed.slice(0, PAGE_SIZE), hasMore: parsed.length > PAGE_SIZE } }
 }
 
-async function fail($: EngineInterface, failure: GitFailure): Promise<void> {
-  await update($, viewAtom, (view): ViewState => ({
-    ...view,
-    status: failure.kind === 'not-a-repo' ? 'no-repo' : 'error',
-    errorMessage: failure.message,
-  }))
+const isCurrent = (view: ViewState, generation: number): boolean => view.generation === generation
+
+async function fail($: EngineInterface, failure: GitFailure, generation: number): Promise<void> {
+  await update($, viewAtom, (latest): ViewState => {
+    if (!isCurrent(latest, generation)) {
+      return latest
+    }
+
+    return {
+      ...latest,
+      status: failure.kind === 'not-a-repo' ? 'no-repo' : 'error',
+      errorMessage: failure.message,
+    }
+  })
 }
 
 async function fetchBranches($: EngineInterface): Promise<BranchResult> {
@@ -81,12 +89,18 @@ async function fetchBranches($: EngineInterface): Promise<BranchResult> {
 
 export async function loadFirst($: EngineInterface): Promise<void> {
   const current = await read($, viewAtom)
-  await update($, viewAtom, (view): ViewState => ({ ...view, status: 'loading', errorMessage: '' }))
+  const started = await update($, viewAtom, (view): ViewState => ({
+    ...view,
+    status: 'loading',
+    errorMessage: '',
+    generation: view.generation + 1,
+  }))
+  const generation = started.generation
 
   const lists = await fetchBranches($)
 
   if (!lists.ok) {
-    return fail($, lists)
+    return fail($, lists, generation)
   }
 
   const { branches, remoteBranches } = lists
@@ -97,14 +111,13 @@ export async function loadFirst($: EngineInterface): Promise<void> {
   const result = await fetchPage($, { ...probe, branch }, 0)
 
   if (!result.ok) {
-    return fail($, result)
+    return fail($, result, generation)
   }
 
   const { rows, state } = layoutCommits(emptyLaneState(), result.page.commits)
 
   await update($, viewAtom, (latest): ViewState => {
-    // A newer load changed the filters while this one was running: drop this result.
-    if (latest.branch !== current.branch || latest.isRemoteShown !== current.isRemoteShown) {
+    if (!isCurrent(latest, generation)) {
       return latest
     }
 
@@ -136,7 +149,7 @@ export async function loadMore($: EngineInterface): Promise<void> {
   const result = await fetchPage($, view, view.commits.length)
 
   if (!result.ok) {
-    await update($, viewAtom, latest => ({ ...latest, errorMessage: result.message }))
+    await update($, viewAtom, latest => (isCurrent(latest, view.generation) ? { ...latest, errorMessage: result.message } : latest))
 
     return
   }
@@ -146,7 +159,7 @@ export async function loadMore($: EngineInterface): Promise<void> {
   const { rows, state } = layoutCommits(view.laneState, fresh)
 
   await update($, viewAtom, latest => {
-    if (latest.branch !== view.branch || latest.commits.length !== view.commits.length) {
+    if (!isCurrent(latest, view.generation)) {
       return latest
     }
 
@@ -163,6 +176,7 @@ export async function loadMore($: EngineInterface): Promise<void> {
 
 const clearedList = (view: ViewState): ViewState => ({
   ...view,
+  status: 'loading',
   commits: [],
   rows: [],
   laneState: emptyLaneState(),
@@ -200,8 +214,23 @@ export async function refresh($: EngineInterface): Promise<void> {
   await loadFirst($)
 }
 
+type GitOutcome = { ok: true } | GitFailure
+
+function describeDetailError(meta: GitOutcome, isParsed: boolean, files: GitOutcome): string {
+  if (!meta.ok) {
+    return meta.message
+  }
+
+  if (!isParsed) {
+    return 'Could not read the commit details.'
+  }
+
+  return files.ok ? '' : `Could not read the file list: ${files.message}`
+}
+
 export async function toggleCommit($: EngineInterface, hash: string): Promise<void> {
   const view = await read($, viewAtom)
+  const { generation } = view
 
   if (view.expandedHash === hash) {
     await update($, viewAtom, latest => ({ ...latest, expandedHash: null, detail: null, detailError: '' }))
@@ -218,10 +247,10 @@ export async function toggleCommit($: EngineInterface, hash: string): Promise<vo
   const meta = await runGit($, ['show', '-s', `--format=${META_FORMAT}`, hash])
   const files = await runGit($, ['show', '-m', '--first-parent', '--numstat', '--format=', hash])
   const parsed = meta.ok ? parseMeta(meta.stdout) : null
-  const error = meta.ok ? (parsed === null ? 'Could not read the commit details.' : '') : meta.message
   const detail = parsed === null ? null : { ...parsed, files: files.ok ? parseNumstat(files.stdout) : [] }
+  const detailError = describeDetailError(meta, parsed !== null, files)
 
   await update($, viewAtom, latest =>
-    latest.expandedHash === hash ? { ...latest, detail, detailError: error } : latest,
+    latest.expandedHash === hash && isCurrent(latest, generation) ? { ...latest, detail, detailError } : latest,
   )
 }

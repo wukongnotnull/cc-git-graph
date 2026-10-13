@@ -18,6 +18,7 @@ export const initialView: ViewState = {
   expandedHash: null,
   detail: null,
   detailError: '',
+  generation: 0,
 }
 
 export const viewAtom = atom({ plugin: PLUGIN, key: 'view' } as const, initialView)

@@ -7,7 +7,7 @@ export type GitReply = {
   isStdoutTruncated?: boolean
 }
 
-type Route = (args: readonly string[]) => GitReply | undefined
+type Route = (args: readonly string[]) => GitReply | undefined | Promise<GitReply | undefined>
 
 type ProcessRunResult = Awaited<ReturnType<EngineInterface['process']['run']>>
 
@@ -20,10 +20,10 @@ const PREFIX_LENGTH = 3
 // the registered `process.run` hook; calls made straight from a test body go
 // through the returned adapter, because a test's `$` has no `process` noun.
 export function serveGit(on: On, route: Route, calls: string[][] = []): GitEngine {
-  const respond = (argv: readonly string[]): ProcessRunResult => {
+  const respond = async (argv: readonly string[]): Promise<ProcessRunResult> => {
     const args = argv.slice(PREFIX_LENGTH)
     calls.push([...args])
-    const reply = route(args) ?? { exitCode: 1, stderr: `unexpected git ${args.join(' ')}` }
+    const reply = (await route(args)) ?? { exitCode: 1, stderr: `unexpected git ${args.join(' ')}` }
 
     return {
       exitCode: reply.exitCode ?? 0,
@@ -34,14 +34,14 @@ export function serveGit(on: On, route: Route, calls: string[][] = []): GitEngin
     }
   }
 
-  on('process.run', async (_$, e) => ({ value: respond(e.argv) }))
+  on('process.run', async (_$, e) => ({ value: await respond(e.argv) }))
 
   const state = memoryState()
 
   return (engine) =>
     ({
       ...(engine as object),
-      process: { run: async (argv: readonly string[]) => respond(argv) },
+      process: { run: (argv: readonly string[]) => respond(argv) },
       state,
     }) as unknown as EngineInterface
 }

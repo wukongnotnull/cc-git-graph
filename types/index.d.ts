@@ -67,6 +67,7 @@ export type ViewState = {
   expandedHash: string | null
   detail: CommitDetail | null
   detailError: string
+  generation: number
 }
 
 declare module 'claude-code' {
