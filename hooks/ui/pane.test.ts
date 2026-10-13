@@ -425,6 +425,25 @@ describe('graph column and badges', () => {
     await ui.unmount()
   })
 
+  test('a pane of the default width draws only the graph and the description', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await $.ui.mount({
+      plugin: PLUGIN,
+      surface: 'desktop',
+      component: 'Pane',
+      requestId: PANE_ID,
+      props: { ...PROPS, bodyColumns: 50 },
+    })
+
+    expect(await ui.find({ type: 'Text', text: 'Description' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Date' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: 'Author' })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: 'Commit' })).toBeUndefined()
+    expect(await ui.find({ key: `commit-${HASH.m}` })).toBeDefined()
+    await ui.unmount()
+  })
+
   test('a narrower pane drops the author and hash columns before the date', async ($, on) => {
     serve(on, route)
     await $.command.run(RUN)
@@ -439,7 +458,7 @@ describe('graph column and badges', () => {
       surface: 'desktop',
       component: 'Pane',
       requestId: PANE_ID,
-      props: { ...PROPS, bodyColumns: 48 },
+      props: { ...PROPS, bodyColumns: 60 },
     })
 
     expect(await narrow.find({ type: 'Text', text: 'Date' })).toBeDefined()

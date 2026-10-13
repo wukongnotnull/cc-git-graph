@@ -25,8 +25,9 @@ export const GRAPH_MIN_CELLS = 6
 export const DATE_WIDTH = 15
 export const AUTHOR_WIDTH = 10
 export const HASH_WIDTH = 8
-// The description is never squeezed below this many cells; the other columns give way first.
-export const DESCRIPTION_MIN = 24
+// The description is never squeezed below this many cells; the other columns give way first. The pane opens about
+// 50 cells wide, and there only the graph and the description are drawn: the date needs about 57.
+export const DESCRIPTION_MIN = 36
 // A row draws at most this many ref chips, each name cut to this many characters.
 export const MAX_CHIPS = 2
 export const CHIP_LABEL_MAX = 22
