@@ -12,7 +12,6 @@ import type { ColumnPlan } from './columns'
 
 type DesktopUi = ElementTable<'desktop'>
 
-const CHIP_TEXT = '#ffffff'
 const TAG_COLOR = '#c98a1b'
 const REMOTE_COLOR = '#6e7681'
 
@@ -37,9 +36,9 @@ function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   const key = `chip-${chip.kind}-${chip.label}`
 
   return [
-    <Text key={key} backgroundColor={color} color={CHIP_TEXT} bold underline={chip.isCurrent}>{` ${prefix}${chip.label} `}</Text>,
+    <Text key={key} color={color} inverse bold underline={chip.isCurrent}>{` ${prefix}${chip.label} `}</Text>,
     chip.remotes.length === 0 ? null : (
-      <Text key={`${key}-remotes`} backgroundColor={color} color={CHIP_TEXT} italic dimColor>{`${chip.remotes.join(' ')} `}</Text>
+      <Text key={`${key}-remotes`} color={color} inverse italic>{`${chip.remotes.join(' ')} `}</Text>
     ),
     <Text key={`${key}-gap`}>{' '}</Text>,
   ]
