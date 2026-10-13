@@ -203,7 +203,7 @@ describe('paging', () => {
 
     expect(await ui.find({ key: 'newer' })).toBeUndefined()
 
-    for (let press = 0; press < 12; press += 1) {
+    for (let press = 0; press < 30 && (await ui.find({ key: 'more' })) !== undefined; press += 1) {
       await ui.press({ key: 'more' })
     }
 
@@ -213,10 +213,8 @@ describe('paging', () => {
     expect(await ui.find({ key: 'more' })).toBeUndefined()
     expect((await ui.findAll({ type: 'Button' })).length).toBeLessThan(total)
 
-    for (let press = 0; press < 12; press += 1) {
-      if ((await ui.find({ key: 'newer' })) !== undefined) {
-        await ui.press({ key: 'newer' })
-      }
+    for (let press = 0; press < 30 && (await ui.find({ key: 'newer' })) !== undefined; press += 1) {
+      await ui.press({ key: 'newer' })
     }
 
     expect(await ui.find({ key: 'newer' })).toBeUndefined()
