@@ -318,9 +318,21 @@ describe('graph column and badges', () => {
     expect(source).toContain('rx="8"')
     expect(source).toContain(`<title>${longName}</title>`)
     expect(source).not.toContain(`>${longName}</text>`)
-    expect(chip?.props.isInteractive).toBe(true)
-    expect(await chipNamed(ui, 'main')).toBeDefined()
-    expect((await chipNamed(ui, 'main'))?.props.isInteractive).toBeFalsy()
+    expect(chip?.props.isInteractive).toBeFalsy()
+    await ui.unmount()
+  })
+
+  test('the detail of a commit spells out every ref in full', async ($, on) => {
+    const longName = 'feat/' + 'very-long-branch-name-'.repeat(2)
+    const log = recordOf(HASH.m, [], 'Ada', 1760000400, `HEAD -> ${longName}, origin/${longName}, tag: v1`, 'Merge')
+    serve(on, args => (args[0] === 'log' ? { stdout: log } : route(args)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    await ui.press({ key: `commit-${HASH.m}` })
+
+    expect(await ui.find({ type: 'Text', text: new RegExp(`${longName} \\(origin\\)`) })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /v1/ })).toBeDefined()
     await ui.unmount()
   })
 

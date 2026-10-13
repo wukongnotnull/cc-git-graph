@@ -39,16 +39,16 @@ function chipColor(chip: Chip, lane: number): string {
   return chip.kind === 'remote' ? REMOTE_COLOR : (LANE_COLORS[lane % LANE_COLORS.length] ?? REMOTE_COLOR)
 }
 
-// `isInteractive` puts the SVG in a sandboxed frame, which is what makes its <title> show on hover; a frame costs
-// more than an image, so only a chip with something to reveal gets one.
-function drawChip(ui: DesktopUi, key: string, chip: ChipSvg, alt: string, hasHiddenText: boolean) {
+// Not `isInteractive`: that puts the SVG in a sandboxed frame, which reloads each time the pane redraws (every
+// scroll step) and flickers. The full names of a cut chip are in the commit's detail instead.
+function drawChip(ui: DesktopUi, key: string, chip: ChipSvg, alt: string) {
   const { Svg } = ui
 
-  return <Svg key={key} source={chip.source} width={chip.width} height={chip.height} alt={alt} isInteractive={hasHiddenText} />
+  return <Svg key={key} source={chip.source} width={chip.width} height={chip.height} alt={alt} />
 }
 
 // An SVG pill, drawn beside the Button: the Button flattens its children to plain text, and a Text can only
-// fill a rectangle. The pill's <title> is the full name, shown by the browser on hover, so a cut name can be read.
+// fill a rectangle. The `alt` and the <title> hold the full name.
 // The remote names sit in a darker part of the same pill, so the branch reads as one chip with two parts.
 function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   const { Text } = ui
@@ -72,7 +72,7 @@ function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
     title,
   })
 
-  return [drawChip(ui, key, svg, title, chip.label.length > CHIP_LABEL_MAX), <Text key={`${key}-gap`}>{' '}</Text>]
+  return [drawChip(ui, key, svg, title), <Text key={`${key}-gap`}>{' '}</Text>]
 }
 
 function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
@@ -84,7 +84,7 @@ function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
 
   return [
     ...shown.flatMap(chip => renderChip(ui, chip, lane)),
-    hidden.length === 0 ? null : drawChip(ui, 'chips-more', more, titles, true),
+    hidden.length === 0 ? null : drawChip(ui, 'chips-more', more, titles),
     hidden.length === 0 ? null : <Text key="chips-more-gap">{' '}</Text>,
   ]
 }
