@@ -1,7 +1,5 @@
-import { atom } from 'claude-code'
-
 import type { ViewState } from '../types'
-import { ALL_BRANCHES, PLUGIN } from './constants'
+import { ALL_BRANCHES } from './constants'
 import { emptyLaneState } from './layout/lanes'
 
 export const initialView: ViewState = {
@@ -20,5 +18,3 @@ export const initialView: ViewState = {
   detailError: '',
   generation: 0,
 }
-
-export const viewAtom = atom({ plugin: PLUGIN, key: 'view' } as const, initialView)

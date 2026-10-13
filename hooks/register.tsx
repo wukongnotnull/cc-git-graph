@@ -1,68 +1,72 @@
-import type { ElementTable, Register } from 'claude-code'
+import type { ElementTable, EngineInterface, Register } from 'claude-code'
 
-const PANE = 'git-graph'
-const HEIGHTS = [14, 16, 18, 20, 22, 24, 28, 32] as const
-const ROWS = 300
+import type { ViewState } from '../types'
+import { PANE_ID } from './constants'
+import { loadFirst } from './controller'
+import { initialView } from './state'
+import { makeActions } from './ui/actions'
+import { renderPane } from './ui/pane'
 
-const lineSvg = (height: number): string =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="${height}" viewBox="0 0 14 ${height}">` +
-  `<line x1="7" y1="0" x2="7" y2="${height}" stroke="#4f8ef7" stroke-width="2"/>` +
-  `<circle cx="7" cy="${height / 2}" r="4" fill="#4f8ef7"/></svg>`
+const VIEW_REF = { plugin: 'cc-git-graph', key: 'view' } as const
+
+// The hooks loader follows `$` only into functions declared in this file, never across an
+// import, and refuses `$` being spread or returned. It also wants every state reference
+// spelled out as literals. The controller and the actions live in their own modules, so
+// they get an object that forwards just the calls they make, each spelled `$.noun.event(...)`
+// here. The plugin keeps a single state value (the view), so the state calls ignore the
+// reference they are given. The cast is the same one the test adapter makes.
+function engineOf($: EngineInterface): EngineInterface {
+  const nouns = {
+    process: {
+      run: (argv: readonly string[]) => $.process.run(argv),
+    },
+    state: {
+      get: () => $.state.get(VIEW_REF),
+      set: (_ref: unknown, value: ViewState, options?: { ifVersion?: number }) =>
+        $.state.set(VIEW_REF, value, options),
+    },
+    ui: {
+      toast: (message: string) => $.ui.toast(message),
+      scroll: (args: Parameters<EngineInterface['ui']['scroll']>[0]) => $.ui.scroll(args),
+    },
+  }
+
+  return nouns as unknown as EngineInterface
+}
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'git-graph', description: 'Probe: Git graph board' })
+    await $.command.register({ name: 'git-graph', description: 'Open the Git graph board' })
 
     return next(e)
   })
 
   on('command.run', { command: 'git-graph' }, async $ => {
-    const opened = await $.ui.open({ id: PANE, title: 'Git Graph probe' })
-    const surfaces = await $.session.surfaces()
+    const opened = await $.ui.open({ id: PANE_ID, title: 'Git Graph' })
 
-    return {
-      text: opened.isPlaced
-        ? `probe placed on ${surfaces.join(',')}`
-        : `probe NOT placed on ${surfaces.join(',')}: ${opened.reason}`,
+    if (!opened.isPlaced) {
+      return { text: 'Git Graph: this surface cannot show the panel.' }
     }
+
+    await loadFirst(engineOf($))
+
+    return { text: 'Git Graph opened.' }
   })
 
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const ui = $.ui.resolve(e) as ElementTable<'desktop'>
-    const { Box, Button, Svg, Text } = ui
-    const rows = Array.from({ length: ROWS }, (_, i) => i)
+  on('ui.render', { component: 'Pane', requestId: PANE_ID }, async ($, e) => {
+    if (e.surface !== 'desktop') {
+      const { Box, Text } = $.ui.resolve(e)
 
-    return (
-      <Box flexDirection="column">
-        <Box flexDirection="row" gap={2}>
-          <Button
-            key="to-250"
-            label="Scroll to row 250"
-            onPress={() => {
-              void $.ui.scroll({ in: PANE, to: { key: 'row-250' } })
-            }}
-          />
-          <Button
-            key="to-0"
-            label="Scroll to row 0"
-            onPress={() => {
-              void $.ui.scroll({ in: PANE, to: { key: 'row-0' } })
-            }}
-          />
+      return (
+        <Box>
+          <Text dimColor>Git Graph 仅支持桌面应用。</Text>
         </Box>
-        {rows.map(i => (
-          <Box key={`row-${i}`} flexDirection="row" alignItems="center">
-            {HEIGHTS.map(height => (
-              <Svg source={lineSvg(height)} alt={`probe ${height}px`} />
-            ))}
-            <Box flexGrow={1} overflow="hidden">
-              <Button key={`commit-${i}`} plain onPress={() => $.ui.toast(`pressed ${i}`)}>
-                <Text>{`row ${i} - click target`}</Text>
-              </Button>
-            </Box>
-          </Box>
-        ))}
-      </Box>
-    )
+      )
+    }
+
+    const ui = $.ui.resolve(e) as ElementTable<'desktop'>
+    const { value: view = initialView } = await $.state.get(VIEW_REF)
+
+    return renderPane(ui, view, makeActions(engineOf($)))
   })
 }

@@ -1,4 +1,4 @@
-import { read, update } from 'claude-code'
+import { atom, read, update } from 'claude-code'
 import type { EngineInterface } from 'claude-code'
 
 import type { Commit, ViewState } from '../types'
@@ -10,7 +10,11 @@ import { META_FORMAT, parseMeta, parseNumstat } from './git/parse-detail'
 import { isCommitHash, runGit } from './git/run-git'
 import type { GitFailure } from './git/run-git'
 import { emptyLaneState, layoutCommits } from './layout/lanes'
-import { viewAtom } from './state'
+import { initialView } from './state'
+
+// The hooks loader reads state references only when their plugin and key are string literals
+// written in the same file as the read or update, so the atom is declared here, not imported.
+export const viewAtom = atom({ plugin: 'cc-git-graph', key: 'view' } as const, initialView)
 
 type Page = { commits: Commit[]; hasMore: boolean }
 type PageResult = { ok: true; page: Page } | GitFailure

@@ -2,8 +2,7 @@ import { read } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 
 import { PAGE_SIZE } from './constants'
-import { loadFirst, loadMore, refresh, selectBranch, toggleCommit, toggleRemote } from './controller'
-import { viewAtom } from './state'
+import { loadFirst, loadMore, refresh, selectBranch, toggleCommit, toggleRemote, viewAtom } from './controller'
 import { HASH, branchListing, forkHistoryLog, linearLog, serveGit } from './testing/fixtures'
 import type { GitReply } from './testing/fixtures'
 
