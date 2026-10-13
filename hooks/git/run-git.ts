@@ -1,5 +1,7 @@
 import type { EngineInterface } from 'claude-code'
 
+import { GIT_TIMEOUT_MS } from '../constants'
+
 const READ_ONLY = new Set(['log', 'show', 'for-each-ref', 'rev-parse'])
 const HASH_PATTERN = /^[0-9a-f]{40,64}$/
 const FIXED_OPTIONS = ['-c', 'core.quotepath=false']
@@ -34,7 +36,7 @@ export async function runGit($: EngineInterface, args: readonly string[]): Promi
   let result: Awaited<ReturnType<EngineInterface['process']['run']>>
 
   try {
-    result = await $.process.run(argv)
+    result = await $.process.run(argv, { timeoutMs: GIT_TIMEOUT_MS })
   } catch (error) {
     return { ok: false, kind: 'unavailable', message: error instanceof Error ? error.message : String(error) }
   }

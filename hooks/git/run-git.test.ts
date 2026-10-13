@@ -2,6 +2,7 @@ import { describe, expect, test } from 'claude-code/testing'
 
 import type { EngineInterface } from 'claude-code'
 
+import { GIT_TIMEOUT_MS } from '../constants'
 import { serveGit } from '../testing/fixtures'
 import { buildGitArgv, isCommitHash, runGit } from './run-git'
 
@@ -100,6 +101,29 @@ describe('runGit', () => {
     const result = await runGit(broken, ['log'])
 
     expect(result).toEqual({ ok: false, kind: 'unavailable', message: 'spawn failed' })
+  })
+
+  test('bounds every git call with a timeout', async () => {
+    const inits: unknown[] = []
+    const engine = {
+      process: {
+        run: async (_argv: readonly string[], init?: unknown) => {
+          inits.push(init)
+
+          return { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false }
+        },
+      },
+    } as unknown as EngineInterface
+    await runGit(engine, ['log'])
+
+    expect(inits).toEqual([{ timeoutMs: GIT_TIMEOUT_MS }])
+  })
+
+  test('reports a call that timed out as unavailable instead of waiting forever', async () => {
+    const hung = { process: { run: async () => { throw new Error('timed out after 10000 ms') } } } as unknown as EngineInterface
+    const result = await runGit(hung, ['log'])
+
+    expect(result).toEqual({ ok: false, kind: 'unavailable', message: 'timed out after 10000 ms' })
   })
 
   test('throws for a non-allowed sub-command without calling the route', async ($, on) => {

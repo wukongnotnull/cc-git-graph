@@ -1,6 +1,8 @@
 export const PLUGIN = 'cc-git-graph'
 export const PANE_ID = 'git-graph'
-export const PAGE_SIZE = 300
+export const PAGE_SIZE = 50
+// A git call that has not returned by then is reported as a failure instead of leaving the pane on Loading.
+export const GIT_TIMEOUT_MS = 10_000
 export const ALL_BRANCHES = '*'
 
 export const LANE_WIDTH = 14
