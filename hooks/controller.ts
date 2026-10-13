@@ -26,7 +26,12 @@ function buildRevs(view: ViewState): string[] | null {
     return ['--branches', '--tags', ...(view.isRemoteShown ? ['--remotes'] : []), 'HEAD']
   }
 
-  return visibleBranches(view).includes(view.branch) ? [view.branch] : null
+  if (!visibleBranches(view).includes(view.branch)) {
+    return null
+  }
+
+  // The full refname, so a branch named like a tag or a path cannot resolve to something else.
+  return [view.remoteBranches.includes(view.branch) ? `refs/remotes/${view.branch}` : `refs/heads/${view.branch}`]
 }
 
 async function fetchPage($: EngineInterface, view: ViewState, offset: number): Promise<PageResult> {
@@ -76,6 +81,23 @@ async function fail($: EngineInterface, failure: GitFailure, generation: number)
   })
 }
 
+const describeError = (error: unknown): string => (error instanceof Error ? error.message : String(error))
+
+// Records a thrown error as the view's error. With a generation, a failure of a superseded load is dropped.
+export async function recordFailure($: EngineInterface, error: unknown, generation?: number): Promise<void> {
+  await update($, viewAtom, (latest): ViewState => {
+    if (generation !== undefined && !isCurrent(latest, generation)) {
+      return latest
+    }
+
+    return { ...latest, status: 'error', errorMessage: describeError(error) }
+  })
+}
+
+export async function currentGeneration($: EngineInterface): Promise<number> {
+  return (await read($, viewAtom)).generation
+}
+
 async function fetchBranches($: EngineInterface): Promise<BranchResult> {
   const inside = await runGit($, ['rev-parse', '--is-inside-work-tree'])
 
@@ -95,16 +117,7 @@ async function fetchBranches($: EngineInterface): Promise<BranchResult> {
   return { ok: true, branches: [...locals, ...remoteBranches], remoteBranches }
 }
 
-export async function loadFirst($: EngineInterface): Promise<void> {
-  const current = await read($, viewAtom)
-  const started = await update($, viewAtom, (view): ViewState => ({
-    ...view,
-    status: 'loading',
-    errorMessage: '',
-    generation: view.generation + 1,
-  }))
-  const generation = started.generation
-
+async function loadGeneration($: EngineInterface, current: ViewState, generation: number): Promise<void> {
   const lists = await fetchBranches($)
 
   if (!lists.ok) {
@@ -147,6 +160,22 @@ export async function loadFirst($: EngineInterface): Promise<void> {
   })
 }
 
+export async function loadFirst($: EngineInterface): Promise<void> {
+  const current = await read($, viewAtom)
+  const started = await update($, viewAtom, (view): ViewState => ({
+    ...view,
+    status: 'loading',
+    errorMessage: '',
+    generation: view.generation + 1,
+  }))
+
+  try {
+    await loadGeneration($, current, started.generation)
+  } catch (error) {
+    await recordFailure($, error, started.generation)
+  }
+}
+
 export async function loadMore($: EngineInterface): Promise<void> {
   const view = await read($, viewAtom)
 
@@ -177,7 +206,7 @@ export async function loadMore($: EngineInterface): Promise<void> {
       commits: [...latest.commits, ...fresh],
       rows: [...latest.rows, ...rows],
       laneState: state,
-      hasMore: result.page.hasMore,
+      hasMore: fresh.length === 0 ? false : result.page.hasMore,
     }
   })
 }
@@ -219,6 +248,12 @@ export async function toggleRemote($: EngineInterface): Promise<void> {
   await loadFirst($)
 }
 
+// Opening the board shows nothing from an earlier repository or session while it loads.
+export async function openGraph($: EngineInterface): Promise<void> {
+  await update($, viewAtom, latest => ({ ...clearedList(latest), errorMessage: '' }))
+  await loadFirst($)
+}
+
 export async function refresh($: EngineInterface): Promise<void> {
   await loadFirst($)
 }
@@ -253,8 +288,8 @@ export async function toggleCommit($: EngineInterface, hash: string): Promise<vo
 
   await update($, viewAtom, latest => ({ ...latest, expandedHash: hash, detail: null, detailError: '' }))
 
-  const meta = await runGit($, ['show', '-s', `--format=${META_FORMAT}`, hash])
-  const files = await runGit($, ['show', '-m', '--first-parent', '--numstat', '--format=', hash])
+  const meta = await runGit($, ['show', '-s', '--no-ext-diff', '--no-textconv', `--format=${META_FORMAT}`, hash])
+  const files = await runGit($, ['show', '-m', '--first-parent', '--numstat', '--no-ext-diff', '--no-textconv', '--format=', hash])
   const parsed = meta.ok ? parseMeta(meta.stdout) : null
   const detail = parsed === null ? null : { ...parsed, files: files.ok ? parseNumstat(files.stdout) : [] }
   const detailError = describeDetailError(meta, parsed !== null, files)

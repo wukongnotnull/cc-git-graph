@@ -2,7 +2,7 @@ import { read } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 
 import { PAGE_SIZE } from './constants'
-import { loadFirst, loadMore, refresh, selectBranch, toggleCommit, toggleRemote, viewAtom } from './controller'
+import { loadFirst, loadMore, openGraph, recordFailure, refresh, selectBranch, toggleCommit, toggleRemote, viewAtom } from './controller'
 import { HASH, branchListing, forkHistoryLog, linearLog, serveGit } from './testing/fixtures'
 import type { GitReply } from './testing/fixtures'
 
@@ -56,6 +56,19 @@ describe('loadFirst', () => {
 
     expect(view.status).toBe('ready')
     expect(view.commits).toEqual([])
+  })
+
+  test('recordFailure records a thrown error, but drops one from a superseded load', async ($, on) => {
+    const engine = serveGit(on, forkRoute)
+    await loadFirst(engine($))
+    const generation = (await read(engine($), viewAtom)).generation
+    await recordFailure(engine($), new Error('stale'), generation - 1)
+
+    expect((await read(engine($), viewAtom)).status).toBe('ready')
+
+    await recordFailure(engine($), new Error('current'), generation)
+
+    expect((await read(engine($), viewAtom)).errorMessage).toBe('current')
   })
 
   test('surfaces truncated output as an error', async ($, on) => {
@@ -123,8 +136,63 @@ describe('filters', () => {
     const lastLog = [...calls].reverse().find(call => call[0] === 'log') ?? []
 
     expect((await read(engine($), viewAtom)).branch).toBe('feature/x')
-    expect(lastLog).toContain('feature/x')
+    expect(lastLog).toContain('refs/heads/feature/x')
     expect(lastLog).not.toContain('--branches')
+  })
+
+  test('a remote branch is addressed by its full remote refname', async ($, on) => {
+    const calls: string[][] = []
+    const engine = serveGit(on, forkRoute, calls)
+    await loadFirst(engine($))
+    await selectBranch(engine($), 'origin/main')
+    const lastLog = [...calls].reverse().find(call => call[0] === 'log') ?? []
+
+    expect(lastLog).toContain('refs/remotes/origin/main')
+  })
+
+  test('both show calls refuse external diff and textconv programs', async ($, on) => {
+    const calls: string[][] = []
+    const engine = serveGit(on, forkRoute, calls)
+    await loadFirst(engine($))
+    await toggleCommit(engine($), HASH.m)
+    const shows = calls.filter(call => call[0] === 'show')
+
+    expect(shows.length).toBe(2)
+    for (const call of shows) {
+      expect(call).toContain('--no-ext-diff')
+      expect(call).toContain('--no-textconv')
+    }
+  })
+
+  test('a failed load is recorded in state, and reopening clears the old list at once', async ($, on) => {
+    let isBroken = false
+    const engine = serveGit(on, args => {
+      if (isBroken && args[0] === 'rev-parse') throw new Error('boom')
+
+      return forkRoute(args)
+    })
+    await loadFirst(engine($))
+    isBroken = true
+    await openGraph(engine($))
+    const view = await read(engine($), viewAtom)
+
+    expect(view.status).toBe('error')
+    expect(view.errorMessage).toContain('boom')
+    expect(view.commits).toEqual([])
+  })
+
+  test('a loadMore page with nothing new stops offering more', async ($, on) => {
+    const records = linearLog(PAGE_SIZE + 1)
+    const engine = serveGit(on, args => {
+      if (args[0] !== 'log') return forkRoute(args)
+      const skip = Number((args.find(arg => arg.startsWith('--skip=')) ?? '--skip=0').slice(7))
+
+      return { stdout: (skip === 0 ? records : records.slice(0, 2)).join('') }
+    })
+    await loadFirst(engine($))
+    await loadMore(engine($))
+
+    expect((await read(engine($), viewAtom)).hasMore).toBe(false)
   })
 
   test('ignores a branch that is not in the list', async ($, on) => {
@@ -367,7 +435,7 @@ describe('overlapping actions', () => {
     let logCalls = 0
     const engine = serveGit(on, args => {
       if (args[0] === 'log' && (logCalls += 1) === 2) return gate.promise
-      if (args[0] === 'log' && args.includes('feature/x')) return { stdout: linearLog(2).join('') }
+      if (args[0] === 'log' && args.includes('refs/heads/feature/x')) return { stdout: linearLog(2).join('') }
 
       return forkRoute(args)
     })

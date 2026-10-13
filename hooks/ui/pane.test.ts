@@ -1,8 +1,10 @@
 import type { On } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
+import type { TestBody } from 'claude-code/testing'
 
-import { PANE_ID, PLUGIN } from '../constants'
-import { HASH, branchListing, forkHistoryLog, serveGit } from '../testing/fixtures'
+import { PAGE_SIZE, PANE_ID, PLUGIN } from '../constants'
+import { viewAtom } from '../controller'
+import { HASH, branchListing, forkHistoryLog, linearLog, serveGit } from '../testing/fixtures'
 import type { GitReply } from '../testing/fixtures'
 
 const META = [HASH.m, `${HASH.a} ${HASH.b}`, 'Ada', 'ada@x.com', 'Bob', 'bob@x.com', '2026-10-11 16:34:41 +0800', 'Merge branch\n\nbody\n'].join('\x1f')
@@ -102,7 +104,7 @@ describe('Pane on desktop', () => {
     await ui.select({ key: 'branch', value: 'main' })
     const lastLog = logCalls(calls).at(-1) ?? []
 
-    expect(lastLog).toContain('main')
+    expect(lastLog).toContain('refs/heads/main')
     expect(lastLog).not.toContain('--branches')
     await ui.unmount()
   })
@@ -158,5 +160,118 @@ describe('/git-graph command', () => {
     expect(result.text).toContain('Git Graph')
     expect(await ui.find({ key: `commit-${HASH.m}` })).toBeDefined()
     await ui.unmount()
+  })
+})
+
+type TestEngine = Parameters<TestBody>[0]
+
+const mount = ($: TestEngine) =>
+  $.ui.mount({ plugin: PLUGIN, surface: 'desktop', component: 'Pane', requestId: PANE_ID, props: PROPS })
+
+const pagedRoute = (records: readonly string[]) => (args: readonly string[]): GitReply | undefined => {
+  if (args[0] !== 'log') return route(args)
+  const skip = Number((args.find(arg => arg.startsWith('--skip=')) ?? '--skip=0').slice(7))
+
+  return { stdout: records.slice(skip, skip + PAGE_SIZE + 1).join('') }
+}
+
+describe('paging', () => {
+  test('the load-more button appends the rest and then disappears', async ($, on) => {
+    serve(on, pagedRoute(linearLog(PAGE_SIZE + 5)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    expect(await ui.find({ key: 'more' })).toBeDefined()
+
+    await ui.press({ key: 'more' })
+
+    expect(await ui.find({ key: 'more' })).toBeUndefined()
+    expect(await ui.find({ key: `commit-${(PAGE_SIZE + 5).toString(16).padStart(40, '0')}` })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('there is no load-more button when everything fits on one page', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    expect(await ui.find({ key: 'more' })).toBeUndefined()
+    await ui.unmount()
+  })
+})
+
+describe('Pane states', () => {
+  test('an empty repository says it has no commits', async ($, on) => {
+    serve(on, args => (args[0] === 'log' ? { exitCode: 128, stderr: 'fatal: your current branch does not have any commits yet' } : route(args)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    expect(await ui.find({ type: 'Text', text: /这个仓库还没有提交/ })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('a merge commit is dimmed and a normal one is not', async ($, on) => {
+    serve(on, route)
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    expect((await ui.find({ key: `commit-${HASH.m}` }))?.props.dimColor).toBe(true)
+    expect((await ui.find({ key: `commit-${HASH.a}` }))?.props.dimColor).toBeFalsy()
+    await ui.unmount()
+  })
+
+  test('a git failure shows the error, and a failed refresh keeps the loaded list', async ($, on) => {
+    let isFailing = false
+    serve(on, args => (isFailing && args[0] === 'log' ? { exitCode: 1, stderr: 'fatal: broken' } : route(args)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+    isFailing = true
+    await ui.press({ key: 'refresh' })
+
+    expect(await ui.find({ type: 'Text', text: /无法读取 Git 历史:fatal: broken/ })).toBeDefined()
+    expect(await ui.find({ key: `commit-${HASH.m}` })).toBeDefined()
+    await ui.unmount()
+  })
+
+  test('a failure while opening shows the error instead of Loading', async ($, on) => {
+    serve(on, args => (args[0] === 'for-each-ref' ? { exitCode: 1, stderr: 'fatal: boom' } : route(args)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    expect(await ui.find({ type: 'Text', text: /无法读取 Git 历史/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Loading/ })).toBeUndefined()
+    await ui.unmount()
+  })
+
+  test('reopening clears the old list while the new one loads', async ($, on) => {
+    let release: () => void = () => undefined
+    let hold: Promise<void> | null = null
+    serve(on, async args => {
+      if (args[0] === 'log' && hold !== null) await hold
+
+      return route(args)
+    })
+    await $.command.run(RUN)
+    hold = new Promise<void>(resolve => {
+      release = resolve
+    })
+    const reopening = $.command.run(RUN)
+    const ui = await mount($)
+
+    expect(await ui.find({ key: `commit-${HASH.m}` })).toBeUndefined()
+    expect(await ui.find({ type: 'Text', text: /Loading/ })).toBeDefined()
+
+    release()
+    await reopening
+
+    expect(await ui.find({ key: `commit-${HASH.m}` })).toBeDefined()
+    await ui.unmount()
+  })
+})
+
+describe('state key', () => {
+  test('the controller atom and the plugin name agree with what the Pane reads', async () => {
+    expect(viewAtom.ref).toEqual({ plugin: PLUGIN, key: 'view' })
+    expect(PLUGIN).toBe('cc-git-graph')
   })
 })

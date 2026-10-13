@@ -11,11 +11,15 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
   const detail = view.detail
 
   if (detail === null) {
+    const hash = view.expandedHash ?? ''
+    const isFailed = view.detailError !== ''
+
     return (
-      <Box key="detail" paddingX={1}>
-        <Text dimColor={view.detailError === ''} color={view.detailError === '' ? undefined : 'error'}>
-          {view.detailError === '' ? 'Loading…' : view.detailError}
+      <Box key="detail" flexDirection="row" gap={2} paddingX={1}>
+        <Text dimColor={!isFailed} color={isFailed ? 'error' : undefined}>
+          {isFailed ? view.detailError : 'Loading…'}
         </Text>
+        <Button key="close-detail" label="✕ Close" onPress={() => actions.toggleCommit(hash)} />
       </Box>
     )
   }
@@ -33,7 +37,7 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
             loaded.has(parent) ? (
               <Button key={`parent-${parent}`} label={shortHash(parent)} onPress={() => actions.scrollToCommit(parent)} />
             ) : (
-              <Text dimColor>{shortHash(parent)}</Text>
+              <Text key={`parent-text-${parent}`} dimColor>{shortHash(parent)}</Text>
             ),
           )}
         </Box>
@@ -59,7 +63,7 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
           <Button key="close-detail" label="✕ Close" onPress={() => actions.toggleCommit(detail.hash)} />
         </Box>
         {detail.files.map(file => (
-          <Box gap={1}>
+          <Box key={`file-${file.path}`} gap={1}>
             <Text wrap="truncate-middle">{file.path}</Text>
             <Text color="diffAdded">{file.added === null ? '-' : `+${file.added}`}</Text>
             <Text color="diffRemoved">{file.deleted === null ? '-' : `-${file.deleted}`}</Text>

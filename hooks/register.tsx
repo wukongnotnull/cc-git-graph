@@ -2,7 +2,7 @@ import type { ElementTable, EngineInterface, Register } from 'claude-code'
 
 import type { ViewState } from '../types'
 import { PANE_ID } from './constants'
-import { loadFirst } from './controller'
+import { openGraph } from './controller'
 import { initialView } from './state'
 import { makeActions } from './ui/actions'
 import { renderPane } from './ui/pane'
@@ -48,7 +48,12 @@ export const register: Register = on => {
       return { text: 'Git Graph: this surface cannot show the panel.' }
     }
 
-    await loadFirst(engineOf($))
+    try {
+      await openGraph(engineOf($))
+    } catch (error) {
+      // openGraph records load failures itself; this catches a failure of the state calls.
+      return { text: `Git Graph: ${error instanceof Error ? error.message : String(error)}` }
+    }
 
     return { text: 'Git Graph opened.' }
   })

@@ -35,6 +35,9 @@ function renderHeader(ui: DesktopUi, columns: number) {
   )
 }
 
+const describeFailure = (view: ViewState): string =>
+  view.status === 'error' ? `无法读取 Git 历史:${view.errorMessage}` : view.errorMessage
+
 function renderList(ui: DesktopUi, view: ViewState, actions: Actions) {
   const { Box, Button, Text } = ui
   const columns = columnCount(view.rows)
@@ -60,7 +63,7 @@ function renderList(ui: DesktopUi, view: ViewState, actions: Actions) {
     <Box flexDirection="column">
       {renderHeader(ui, columns)}
       {items}
-      {view.errorMessage === '' ? null : <Text color="error">{view.errorMessage}</Text>}
+      {view.errorMessage === '' ? null : <Text color="error">{describeFailure(view)}</Text>}
       {view.hasMore ? <Button key="more" label="加载更多" onPress={() => actions.loadMore()} /> : null}
     </Box>
   )
@@ -78,8 +81,8 @@ function renderBody(ui: DesktopUi, view: ViewState, actions: Actions) {
     return <Text>当前目录不是 Git 仓库。</Text>
   }
 
-  if (view.status === 'error') {
-    return <Text color="error">{`无法读取 Git 历史:${view.errorMessage}`}</Text>
+  if (view.status === 'error' && view.commits.length === 0) {
+    return <Text color="error">{describeFailure(view)}</Text>
   }
 
   if (view.commits.length === 0) {
