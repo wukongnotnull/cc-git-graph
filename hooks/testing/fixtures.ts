@@ -36,9 +36,79 @@ export function serveGit(on: On, route: Route, calls: string[][] = []): GitEngin
 
   on('process.run', async (_$, e) => ({ value: respond(e.argv) }))
 
+  const state = memoryState()
+
   return (engine) =>
     ({
       ...(engine as object),
       process: { run: async (argv: readonly string[]) => respond(argv) },
+      state,
     }) as unknown as EngineInterface
+}
+
+type StateRef = { plugin: string; key: string; id?: string }
+type StoredValue = { value: unknown; version: number }
+
+// A test's `$` has no `state` noun either; this keeps values and versions in memory.
+function memoryState() {
+  const stored = new Map<string, StoredValue>()
+  const addressOf = (ref: StateRef): string => `${ref.plugin}/${ref.key}/${ref.id ?? ''}`
+
+  return {
+    get: async (ref: StateRef) => ({ ...(stored.get(addressOf(ref)) ?? { value: undefined, version: 0 }) }),
+    set: async (ref: StateRef, value: unknown, options?: { ifVersion?: number }) => {
+      const current = stored.get(addressOf(ref)) ?? { value: undefined, version: 0 }
+
+      if (options?.ifVersion !== undefined && options.ifVersion !== current.version) {
+        return { isSet: false as const, version: current.version }
+      }
+
+      stored.set(addressOf(ref), { value, version: current.version + 1 })
+
+      return { isSet: true as const, version: current.version + 1 }
+    },
+  }
+}
+
+export const HASH = {
+  m: 'a'.repeat(40),
+  a: 'b'.repeat(40),
+  b: 'c'.repeat(40),
+  r: 'd'.repeat(40),
+} as const
+
+export function recordOf(
+  hash: string,
+  parents: readonly string[],
+  author: string,
+  timestamp: number,
+  refs: string,
+  subject: string,
+): string {
+  return `${[hash, parents.join(' '), author, String(timestamp), refs, subject].join('\x1f')}\x1e\n`
+}
+
+// M merges A and B, both children of R; the topological order is M, A, B, R.
+export const forkHistoryLog =
+  recordOf(HASH.m, [HASH.a, HASH.b], 'Ada', 1760000400, 'HEAD -> main, origin/main', 'Merge branch') +
+  recordOf(HASH.a, [HASH.r], 'Ada', 1760000300, '', 'feat: a') +
+  recordOf(HASH.b, [HASH.r], 'Bob', 1760000200, 'feature/x', 'feat: b') +
+  recordOf(HASH.r, [], 'Ada', 1760000100, '', 'chore: root')
+
+export const branchListing = 'refs/heads/main\nrefs/heads/feature/x\nrefs/remotes/origin/main\nrefs/remotes/origin/HEAD\n'
+
+const hashOf = (index: number): string => index.toString(16).padStart(40, '0')
+
+// Newest first; commit i has commit i+1 as its only parent.
+export function linearLog(count: number): string[] {
+  return Array.from({ length: count }, (_, index) =>
+    recordOf(
+      hashOf(index + 1),
+      index + 1 < count ? [hashOf(index + 2)] : [],
+      'Ada',
+      1760000000 - index,
+      '',
+      `commit ${index}`,
+    ),
+  )
 }
