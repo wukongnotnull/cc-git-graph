@@ -39,10 +39,12 @@ function chipColor(chip: Chip, lane: number): string {
   return chip.kind === 'remote' ? REMOTE_COLOR : (LANE_COLORS[lane % LANE_COLORS.length] ?? REMOTE_COLOR)
 }
 
-function drawChip(ui: DesktopUi, key: string, chip: ChipSvg, alt: string) {
+// `isInteractive` puts the SVG in a sandboxed frame, which is what makes its <title> show on hover; a frame costs
+// more than an image, so only a chip with something to reveal gets one.
+function drawChip(ui: DesktopUi, key: string, chip: ChipSvg, alt: string, hasHiddenText: boolean) {
   const { Svg } = ui
 
-  return <Svg key={key} source={chip.source} width={chip.width} height={chip.height} alt={alt} />
+  return <Svg key={key} source={chip.source} width={chip.width} height={chip.height} alt={alt} isInteractive={hasHiddenText} />
 }
 
 // An SVG pill, drawn beside the Button: the Button flattens its children to plain text, and a Text can only
@@ -66,7 +68,7 @@ function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
     title,
   })
 
-  return [drawChip(ui, key, svg, title), <Text key={`${key}-gap`}>{' '}</Text>]
+  return [drawChip(ui, key, svg, title, chip.label.length > CHIP_LABEL_MAX), <Text key={`${key}-gap`}>{' '}</Text>]
 }
 
 function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
@@ -78,7 +80,7 @@ function renderChips(ui: DesktopUi, commit: Commit, lane: number) {
 
   return [
     ...shown.flatMap(chip => renderChip(ui, chip, lane)),
-    hidden.length === 0 ? null : drawChip(ui, 'chips-more', more, titles),
+    hidden.length === 0 ? null : drawChip(ui, 'chips-more', more, titles, true),
     hidden.length === 0 ? null : <Text key="chips-more-gap">{' '}</Text>,
   ]
 }

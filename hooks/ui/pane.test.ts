@@ -308,7 +308,7 @@ describe('graph column and badges', () => {
 
   test('a chip is a rounded pill whose hover title is the full, uncut name', async ($, on) => {
     const longName = 'feat/' + 'very-long-branch-name-'.repeat(2)
-    const log = recordOf(HASH.m, [HASH.a], 'Ada', 1760000400, `HEAD -> ${longName}`, 'Merge') + recordOf(HASH.a, [], 'Ada', 1760000300, '', 'root')
+    const log = recordOf(HASH.m, [HASH.a], 'Ada', 1760000400, `HEAD -> ${longName}`, 'Merge') + recordOf(HASH.a, [], 'Ada', 1760000300, 'main', 'root')
     serve(on, args => (args[0] === 'log' ? { stdout: log } : route(args)))
     await $.command.run(RUN)
     const ui = await mount($)
@@ -318,6 +318,9 @@ describe('graph column and badges', () => {
     expect(source).toContain('rx="8"')
     expect(source).toContain(`<title>${longName}</title>`)
     expect(source).not.toContain(`>${longName}</text>`)
+    expect(chip?.props.isInteractive).toBe(true)
+    expect(await chipNamed(ui, 'main')).toBeDefined()
+    expect((await chipNamed(ui, 'main'))?.props.isInteractive).toBeFalsy()
     await ui.unmount()
   })
 
