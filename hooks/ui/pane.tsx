@@ -4,6 +4,7 @@ import type { ViewState } from '../../types'
 import { AUTHOR_WIDTH, DATE_WIDTH, HASH_WIDTH } from '../constants'
 import { graphCells } from '../layout/graph-width'
 import { columnCount } from '../layout/lanes'
+import { windowEnd } from '../layout/window'
 import { planColumns } from './columns'
 import type { ColumnPlan } from './columns'
 import type { Actions } from './actions'
@@ -49,10 +50,12 @@ function renderList(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumn
   const { Box, Button, Text } = ui
   const columns = columnCount(view.rows)
   const plan = planColumns(bodyColumns, graphCells(columns))
-  const loaded = new Set(view.commits.map(commit => commit.hash))
+  const end = windowEnd(view, view.windowStart)
+  const shown = view.commits.slice(view.windowStart, end)
+  const drawn = new Set(shown.map(commit => commit.hash))
 
-  const items = view.commits.flatMap((commit, index) => {
-    const row = view.rows[index]
+  const items = shown.flatMap((commit, index) => {
+    const row = view.rows[view.windowStart + index]
 
     if (row === undefined) {
       return []
@@ -61,18 +64,22 @@ function renderList(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumn
     const parts = [renderRow(ui, commit, row, columns, plan, view.isRemoteShown, actions)]
 
     if (view.expandedHash === commit.hash) {
-      parts.push(renderDetail(ui, view, loaded, actions))
+      parts.push(renderDetail(ui, view, drawn, actions))
     }
 
     return parts
   })
 
+  const hasNewer = view.windowStart > 0
+  const hasOlder = end < view.commits.length || view.hasMore
+
   return (
     <Box flexDirection="column">
       {renderHeader(ui, columns, plan)}
+      {hasNewer ? <Button key="newer" label="↑ 较新的提交" onPress={() => actions.showNewer()} /> : null}
       {items}
       {view.errorMessage === '' ? null : <Text color="error">{describeFailure(view)}</Text>}
-      {view.hasMore ? <Button key="more" label="加载更多" onPress={() => actions.loadMore()} /> : null}
+      {hasOlder ? <Button key="more" label="加载更多" onPress={() => actions.showOlder()} /> : null}
     </Box>
   )
 }

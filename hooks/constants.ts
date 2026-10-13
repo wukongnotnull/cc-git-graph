@@ -1,6 +1,12 @@
 export const PLUGIN = 'cc-git-graph'
 export const PANE_ID = 'git-graph'
 export const PAGE_SIZE = 50
+// The engine draws a pane's tree only up to about 200,000 characters and drops the rest (measured: 100 rows came
+// to 199,692 and the 101st never showed). The pane draws a window of rows within this budget, which leaves room
+// for the toolbar, the header and an open commit's detail.
+export const ROW_WINDOW_CHARS = 140_000
+// What a row costs besides its SVGs and texts: its nodes, props and keys, measured at about 1,400.
+export const ROW_OVERHEAD_CHARS = 1_400
 // A git call that has not returned by then is reported as a failure instead of leaving the pane on Loading.
 export const GIT_TIMEOUT_MS = 10_000
 export const ALL_BRANCHES = '*'

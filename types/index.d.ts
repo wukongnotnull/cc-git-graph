@@ -68,6 +68,9 @@ export type ViewState = {
   detail: CommitDetail | null
   detailError: string
   generation: number
+  // The pane draws the rows from `windowStart` on, as many as fit; `windowStack` holds the starts it left behind.
+  windowStart: number
+  windowStack: number[]
 }
 
 declare module 'claude-code' {

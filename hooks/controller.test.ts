@@ -2,7 +2,8 @@ import { read } from 'claude-code'
 import { describe, expect, test } from 'claude-code/testing'
 
 import { PAGE_SIZE } from './constants'
-import { loadFirst, loadMore, openGraph, recordFailure, refresh, selectBranch, toggleCommit, toggleRemote, viewAtom } from './controller'
+import { loadFirst, loadMore, openGraph, recordFailure, refresh, selectBranch, showNewer, showOlder, toggleCommit, toggleRemote, viewAtom } from './controller'
+import { windowEnd } from './layout/window'
 import { HASH, branchListing, forkHistoryLog, linearLog, serveGit } from './testing/fixtures'
 import type { GitReply } from './testing/fixtures'
 
@@ -473,5 +474,83 @@ describe('detail errors and serialization', () => {
     const view = await read(engine($), viewAtom)
 
     expect(JSON.parse(JSON.stringify(view))).toEqual(view)
+  })
+})
+
+describe('windows', () => {
+  const longRoute = (all: readonly string[]) => (args: readonly string[]): GitReply | undefined => {
+    if (args[0] === 'rev-parse') return { stdout: 'true\n' }
+    if (args[0] === 'for-each-ref') return { stdout: branchListing }
+    if (args[0] === 'log') return { stdout: all.slice(skipOf(args), skipOf(args) + takeOf(args)).join('') }
+
+    return undefined
+  }
+
+  test('older grows the window, then moves it on once it is full, and newer comes back', async ($, on) => {
+    const engine = serveGit(on, longRoute(linearLog(400)))
+    await loadFirst(engine($))
+    const starts: number[] = []
+
+    for (let step = 0; step < 30; step += 1) {
+      await showOlder(engine($))
+      starts.push((await read(engine($), viewAtom)).windowStart)
+    }
+
+    const moved = await read(engine($), viewAtom)
+
+    expect(moved.windowStart).toBeGreaterThan(0)
+    expect(moved.windowStack.length).toBeGreaterThan(0)
+    expect(moved.commits.length).toBe(400)
+    expect(windowEnd(moved, moved.windowStart)).toBe(400)
+
+    for (let step = 0; step < 10; step += 1) {
+      await showNewer(engine($))
+    }
+
+    const back = await read(engine($), viewAtom)
+
+    expect(back.windowStart).toBe(0)
+    expect(back.windowStack).toEqual([])
+    expect(starts[0]).toBe(0)
+  })
+
+  test('the window never grows past the budget however many pages are loaded', async ($, on) => {
+    const engine = serveGit(on, longRoute(linearLog(400)))
+    await loadFirst(engine($))
+
+    for (let step = 0; step < 4; step += 1) {
+      await showOlder(engine($))
+    }
+
+    const view = await read(engine($), viewAtom)
+    const end = windowEnd(view, view.windowStart)
+
+    expect(end - view.windowStart).toBeLessThan(view.commits.length)
+    expect(end - view.windowStart).toBeLessThan(200)
+  })
+
+  test('refreshing or switching the branch starts again from the first window', async ($, on) => {
+    const engine = serveGit(on, longRoute(linearLog(400)))
+    await loadFirst(engine($))
+
+    for (let step = 0; step < 6; step += 1) {
+      await showOlder(engine($))
+    }
+
+    expect((await read(engine($), viewAtom)).windowStart).toBeGreaterThan(0)
+
+    await refresh(engine($))
+    const view = await read(engine($), viewAtom)
+
+    expect(view.windowStart).toBe(0)
+    expect(view.windowStack).toEqual([])
+  })
+
+  test('newer does nothing in the first window', async ($, on) => {
+    const engine = serveGit(on, longRoute(linearLog(10)))
+    await loadFirst(engine($))
+    await showNewer(engine($))
+
+    expect((await read(engine($), viewAtom)).windowStart).toBe(0)
   })
 })

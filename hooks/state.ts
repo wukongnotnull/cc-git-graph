@@ -17,4 +17,6 @@ export const initialView: ViewState = {
   detail: null,
   detailError: '',
   generation: 0,
+  windowStart: 0,
+  windowStack: [],
 }

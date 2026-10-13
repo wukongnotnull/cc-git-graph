@@ -194,6 +194,36 @@ describe('paging', () => {
     await ui.unmount()
   })
 
+  test('a long history is drawn in windows: the pane never holds every row, and newer leads back', async ($, on) => {
+    const total = 400
+    serve(on, pagedRoute(linearLog(total)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+    const hashOf = (index: number): string => index.toString(16).padStart(40, '0')
+
+    expect(await ui.find({ key: 'newer' })).toBeUndefined()
+
+    for (let press = 0; press < 12; press += 1) {
+      await ui.press({ key: 'more' })
+    }
+
+    expect(await ui.find({ key: 'newer' })).toBeDefined()
+    expect(await ui.find({ key: `commit-${hashOf(1)}` })).toBeUndefined()
+    expect(await ui.find({ key: `commit-${hashOf(total)}` })).toBeDefined()
+    expect(await ui.find({ key: 'more' })).toBeUndefined()
+    expect((await ui.findAll({ type: 'Button' })).length).toBeLessThan(total)
+
+    for (let press = 0; press < 12; press += 1) {
+      if ((await ui.find({ key: 'newer' })) !== undefined) {
+        await ui.press({ key: 'newer' })
+      }
+    }
+
+    expect(await ui.find({ key: 'newer' })).toBeUndefined()
+    expect(await ui.find({ key: `commit-${hashOf(1)}` })).toBeDefined()
+    await ui.unmount()
+  })
+
   test('there is no load-more button when everything fits on one page', async ($, on) => {
     serve(on, route)
     await $.command.run(RUN)

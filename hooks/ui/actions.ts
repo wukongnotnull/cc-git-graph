@@ -7,6 +7,8 @@ import {
   recordFailure,
   refresh,
   selectBranch,
+  showNewer,
+  showOlder,
   toggleCommit,
   toggleRemote,
 } from '../controller'
@@ -16,6 +18,8 @@ export type Actions = {
   toggleRemote(): void
   refresh(): void
   loadMore(): void
+  showOlder(): void
+  showNewer(): void
   toggleCommit(hash: string): void
   scrollToCommit(hash: string): void
 }
@@ -44,6 +48,8 @@ export function makeActions($: EngineInterface): Actions {
     toggleRemote: () => guard(() => toggleRemote($)),
     refresh: () => guard(() => refresh($)),
     loadMore: () => guard(() => loadMore($)),
+    showOlder: () => guard(() => showOlder($)),
+    showNewer: () => guard(() => showNewer($)),
     toggleCommit: hash => guard(() => toggleCommit($, hash)),
     scrollToCommit: hash => {
       $.ui.scroll({ in: PANE_ID, to: { key: `row-${hash}` } }).catch(error => {
