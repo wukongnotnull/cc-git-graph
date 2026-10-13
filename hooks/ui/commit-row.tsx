@@ -28,7 +28,7 @@ function chipColor(chip: Chip, lane: number): string {
   return chip.kind === 'remote' ? REMOTE_COLOR : (LANE_COLORS[lane % LANE_COLORS.length] ?? REMOTE_COLOR)
 }
 
-// Sibling Texts, not a wrapping one: the Button lays them out inline, as it did the bracketed names.
+// Drawn beside the Button, never inside it: a Button flattens its children to plain text and drops their styles.
 function renderChip(ui: DesktopUi, chip: Chip, lane: number) {
   const { Text } = ui
   const color = chipColor(chip, lane)
@@ -55,15 +55,17 @@ export function renderRow(ui: DesktopUi, commit: Commit, row: GraphRow, columns:
         width={graphWidthPx(columns)}
         height={ROW_HEIGHT}
         alt={`Graph for ${shortHash(commit.hash)}`} />
-      <Box flexGrow={1} overflow="hidden">
+      <Box flexGrow={1} flexDirection="row" overflow="hidden">
+        <Box flexShrink={0} flexDirection="row">
+          {chipsOf(commit.refs).flatMap(chip => renderChip(ui, chip, row.color))}
+        </Box>
         <Button
           key={`commit-${commit.hash}`}
           plain
           dimColor={isDim}
           onPress={() => actions.toggleCommit(commit.hash)}
         >
-          {chipsOf(commit.refs).flatMap(chip => renderChip(ui, chip, row.color))}
-          <Text>{` ${commit.subject}`}</Text>
+          <Text>{commit.subject}</Text>
         </Button>
       </Box>
       {plan.isDateShown ? (
