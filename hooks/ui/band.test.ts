@@ -96,7 +96,9 @@ describe('AbovePrompt band', () => {
 
     await band.press({ key: 'open-graph' })
 
-    expect(await band.find({ type: 'Text', text: /⎇ feat\/ui-polish/ })).toBeDefined()
+    expect(await band.find({ key: 'current-branch' })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: 'feat/ui-polish' })).toBeDefined()
+    expect((await band.find({ key: 'current-branch' }))?.props.borderStyle).toBe('round')
     await band.unmount()
   })
 
@@ -107,10 +109,10 @@ describe('AbovePrompt band', () => {
     await band.press({ key: 'open-graph' })
     const meters = (await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)
 
-    expect(meters).toEqual(['Session 12%', 'Week 34%', 'Context 23%'])
+    expect(meters).toEqual(['Branch', 'Session 12%', 'Week 34%', 'Context 23%'])
     expect(await band.find({ type: 'Text', text: 'Cost $0.42' })).toBeDefined()
     expect(await band.find({ type: 'Text', text: /↻/ })).toBeDefined()
-    expect(String((await band.find({ type: 'Svg' }))?.props.source)).toContain('<circle')
+    expect(String((await band.findAll({ type: 'Svg' })).at(1)?.props.source)).toContain('<circle')
     await band.unmount()
   })
 
@@ -120,7 +122,7 @@ describe('AbovePrompt band', () => {
 
     await band.press({ key: 'open-graph' })
 
-    expect(await band.find({ type: 'Svg' })).toBeUndefined()
+    expect((await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)).toEqual(['Branch'])
     expect(await band.find({ type: 'Text', text: /Cost/ })).toBeUndefined()
     expect(await band.find({ key: 'open-graph' })).toBeDefined()
     await band.unmount()
