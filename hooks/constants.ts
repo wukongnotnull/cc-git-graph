@@ -13,6 +13,8 @@ export const ROW_OVERHEAD_CHARS = 1_400
 // A git call that has not returned by then is reported as a failure instead of leaving the pane on Loading.
 export const GIT_TIMEOUT_MS = 10_000
 export const ALL_BRANCHES = '*'
+// The engine refuses a Select of more options than this, and with it the whole pane.
+export const MAX_SELECT_OPTIONS = 64
 
 export const LANE_WIDTH = 14
 export const ROW_HEIGHT = 18
@@ -34,6 +36,11 @@ export const DESCRIPTION_MIN = 36
 // A commit's detail puts its files beside its fields from this many cells on, and under them below.
 export const DETAIL_WIDE_MIN = 100
 export const DETAIL_LABEL_WIDTH = 11
+// A commit's detail lists at most this many files and this much of its message: the engine drops what comes after
+// a pane's text limit, and with it the rest of the list. Each file costs about three times its path (two keys and
+// its name), so a commit of thousands of files alone would pass that limit.
+export const MAX_DETAIL_FILES = 50
+export const MAX_MESSAGE_CHARS = 4_000
 // A row draws at most this many ref chips, each name cut to this many characters.
 export const MAX_CHIPS = 2
 export const CHIP_LABEL_MAX = 22

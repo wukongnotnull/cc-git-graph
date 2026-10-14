@@ -11,7 +11,8 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 ## 实测出来的约束
 
 - **只读 git**:只能 `log`、`show`、`for-each-ref`、`rev-parse`(`hooks/git/run-git.ts` 有白名单)。每次调用 10 秒超时,并以 `LC_ALL=C` 运行(失败类型靠英文报错区分);每页 50 条,300 条一页会让 `$.process.run` 不返回。
-- **面板内容上限约 20 万字符**,超出的行不画。所以列表按窗口显示(`hooks/layout/window.ts`,预算在 `constants.ts`),diff 限 3 万字符。每行新增内容要计入窗口的开销估计。
+- **面板内容有上限**,超出的部分不画,后面的元素(包括列表底部的 Load more)一起消失。桌面应用实测 100 行约 20 万字符触顶;`plugin test` 里引擎会报 `N characters of text are drawn up to the first 99986`,key 也计入(一个文件约占路径长度的三倍)。所以列表按窗口显示(`hooks/layout/window.ts`,预算在 `constants.ts`),diff 限 3 万字符,详情最多列 50 个文件、说明最多 4000 字符。每行新增内容要计入窗口的开销估计;`hooks/ui/budget.test.ts` 用最坏情况检查 Load more 还在。
+- **`Select` 最多 64 个选项**,超出时引擎拒绝画整个面板。分支下拉按 `branchOptions` 截断。
 - **桌面端渲染**:`Button` 把子元素压成纯文本、丢样式,要样式的画在按钮外;带边框的 `Box` 上下各占一行,要和按钮等高就用 SVG;`Svg` 不要设 `isInteractive`(沙盒框每次重画都重载,滚动时闪);没有 tooltip;面板宽度由应用管理,`$.ui.open` 的 `columns` 只是请求,列按 `bodyColumns` 自适应。
 - **`hooks/register.tsx` 里的 `$`** 不能跨 import,控制器拿到的是 `engineOf($)` 转发的对象,新增调用要写进去且**参数完整转发**(丢参数会让超时之类悄悄失效)。状态引用的 `plugin`、`key` 必须是字面量。`ui.render` 里只读状态不写。不要在渲染钩子里用 `$.clock.now()`,测试环境没有,整个钩子会被跳过。
 - 写进 SVG 的文本要 XML 转义。
