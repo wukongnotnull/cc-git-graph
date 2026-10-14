@@ -116,7 +116,24 @@ describe('runGit', () => {
     } as unknown as EngineInterface
     await runGit(engine, ['log'])
 
-    expect(inits).toEqual([{ timeoutMs: GIT_TIMEOUT_MS }])
+    expect(inits).toEqual([expect.objectContaining({ timeoutMs: GIT_TIMEOUT_MS })])
+  })
+
+  // The failures are told apart by git's messages, which a translated git would write in another language.
+  test('runs git in the C locale so its messages are in English', async () => {
+    const inits: { env?: Record<string, string> }[] = []
+    const engine = {
+      process: {
+        run: async (_argv: readonly string[], init?: { env?: Record<string, string> }) => {
+          inits.push(init ?? {})
+
+          return { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false }
+        },
+      },
+    } as unknown as EngineInterface
+    await runGit(engine, ['log'])
+
+    expect(inits[0]?.env).toEqual({ LC_ALL: 'C' })
   })
 
   test('reports a call that timed out as unavailable instead of waiting forever', async () => {
