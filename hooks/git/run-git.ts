@@ -5,6 +5,8 @@ import { GIT_TIMEOUT_MS } from '../constants'
 const READ_ONLY = new Set(['log', 'show', 'for-each-ref', 'rev-parse'])
 const HASH_PATTERN = /^[0-9a-f]{40,64}$/
 const FIXED_OPTIONS = ['-c', 'core.quotepath=false']
+// The failures below are told apart by git's messages, so git must not translate them.
+const ENGLISH_MESSAGES = { LC_ALL: 'C' }
 
 export type GitResult =
   | { ok: true; stdout: string }
@@ -36,7 +38,7 @@ export async function runGit($: EngineInterface, args: readonly string[]): Promi
   let result: Awaited<ReturnType<EngineInterface['process']['run']>>
 
   try {
-    result = await $.process.run(argv, { timeoutMs: GIT_TIMEOUT_MS })
+    result = await $.process.run(argv, { env: ENGLISH_MESSAGES, timeoutMs: GIT_TIMEOUT_MS })
   } catch (error) {
     return { ok: false, kind: 'unavailable', message: error instanceof Error ? error.message : String(error) }
   }

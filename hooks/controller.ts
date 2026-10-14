@@ -296,8 +296,10 @@ export async function toggleCommit($: EngineInterface, hash: string): Promise<vo
 
   await update($, viewAtom, latest => ({ ...latest, expandedHash: hash, detail: null, detailError: '', fileDiff: null }))
 
-  const meta = await runGit($, ['show', '-s', '--no-ext-diff', '--no-textconv', `--format=${META_FORMAT}`, hash])
-  const files = await runGit($, ['show', '-m', '--first-parent', '--no-renames', '--numstat', '--no-ext-diff', '--no-textconv', '--format=', hash])
+  const [meta, files] = await Promise.all([
+    runGit($, ['show', '-s', '--no-ext-diff', '--no-textconv', `--format=${META_FORMAT}`, hash]),
+    runGit($, ['show', '-m', '--first-parent', '--no-renames', '--numstat', '--no-ext-diff', '--no-textconv', '--format=', hash]),
+  ])
   const parsed = meta.ok ? parseMeta(meta.stdout) : null
   const detail = parsed === null ? null : { ...parsed, files: files.ok ? parseNumstat(files.stdout) : [] }
   const detailError = describeDetailError(meta, parsed !== null, files)

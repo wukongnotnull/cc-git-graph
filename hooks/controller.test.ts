@@ -456,6 +456,23 @@ describe('overlapping actions', () => {
   })
 })
 
+describe('detail loading', () => {
+  test('asks for the fields and the file list at the same time', async ($, on) => {
+    const gate = deferred<GitReply>()
+    const calls: string[][] = []
+    const engine = serveGit(on, args => (args[0] === 'show' && !args.includes('--numstat') ? gate.promise : forkRoute(args)), calls)
+    await loadFirst(engine($))
+    const opening = toggleCommit(engine($), HASH.m)
+    await settle()
+    const shows = calls.filter(args => args[0] === 'show')
+    gate.resolve({ stdout: META })
+    await opening
+
+    expect(shows).toHaveLength(2)
+    expect((await read(engine($), viewAtom)).detail?.files).toHaveLength(2)
+  })
+})
+
 describe('detail errors and serialization', () => {
   test('keeps the detail and reports a file-list failure', async ($, on) => {
     const engine = serveGit(on, args =>
