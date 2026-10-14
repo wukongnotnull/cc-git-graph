@@ -116,7 +116,8 @@ export const register: Register = on => {
     const { value: branch = '' } = await $.state.get(BRANCH_REF)
     const { value: usage } = await $.state.get(USAGE_REF)
 
-    return renderBand(ui, branch, usage, await $.clock.now(), () => {
+    // Only to tell a reset later today from one on another day, so the module's own Date is enough and nothing waits on the engine's clock.
+    return renderBand(ui, branch, usage, new Date().getTime(), () => {
       openBoard($).then(text => {
         if (text !== OPENED_TEXT) {
           $.ui.toast(text)
