@@ -41,11 +41,11 @@ function renderFileDiff(ui: DesktopUi, diff: FileDiff | null, actions: Actions) 
   if (diff.isLoading) {
     body = note('Loading…')
   } else if (diff.error !== '') {
-    body = note(`无法读取这个文件的变更:${diff.error}`, 'error')
+    body = note(`Could not read this file's changes: ${diff.error}`, 'error')
   } else if (diff.isTooLarge) {
-    body = note('这个文件的变更太大,没有显示。')
+    body = note('The changes to this file are too large to show.')
   } else if (diff.text === '') {
-    body = note('没有可显示的文本变更(二进制文件,或只改了文件权限)。')
+    body = note('No text changes to show (a binary file, or only the file mode changed).')
   } else {
     body = <Code key="file-diff-code" source={diff.text} path={diff.path} format="diff" />
   }
@@ -56,10 +56,10 @@ function renderFileDiff(ui: DesktopUi, diff: FileDiff | null, actions: Actions) 
         <Box flexGrow={1} flexShrink={1} width={0}>
           <Text bold wrap="truncate-middle">{diff.path}</Text>
         </Box>
-        <Button key="close-file-diff" label="✕ 关闭 diff" onPress={() => actions.toggleFileDiff(diff.path)} />
+        <Button key="close-file-diff" label="✕ Close diff" onPress={() => actions.toggleFileDiff(diff.path)} />
       </Box>
       {body}
-      {diff.isCut ? note('变更太长,只显示了前面的部分。') : null}
+      {diff.isCut ? note('The changes are long; only the first part is shown.') : null}
     </Box>
   )
 }

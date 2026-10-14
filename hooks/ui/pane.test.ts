@@ -141,7 +141,7 @@ describe('Pane messages', () => {
     await $.command.run(RUN)
     const ui = await $.ui.mount({ plugin: PLUGIN, surface: 'desktop', component: 'Pane', requestId: PANE_ID, props: PROPS })
 
-    expect(await ui.find({ type: 'Text', text: /不是 Git 仓库/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /This directory is not a Git repository/ })).toBeDefined()
     await ui.unmount()
   })
 
@@ -149,7 +149,7 @@ describe('Pane messages', () => {
     serve(on, route)
     const ui = await $.ui.mount({ plugin: PLUGIN, surface: 'terminal', component: 'Pane', requestId: PANE_ID, props: PROPS })
 
-    expect(await ui.find({ type: 'Text', text: /仅支持桌面应用/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /works only in the desktop app/ })).toBeDefined()
     expect(await ui.find({ key: 'branch' })).toBeUndefined()
     await ui.unmount()
   })
@@ -189,7 +189,7 @@ describe('paging', () => {
     await $.command.run(RUN)
     const ui = await mount($)
 
-    expect(await ui.find({ key: 'more' })).toBeDefined()
+    expect((await ui.find({ key: 'more' }))?.text).toBe('Load more')
 
     await ui.press({ key: 'more' })
 
@@ -211,7 +211,7 @@ describe('paging', () => {
       await ui.press({ key: 'more' })
     }
 
-    expect(await ui.find({ key: 'newer' })).toBeDefined()
+    expect((await ui.find({ key: 'newer' }))?.text).toBe('↑ Newer commits')
     expect(await ui.find({ key: `commit-${hashOf(1)}` })).toBeUndefined()
     expect(await ui.find({ key: `commit-${hashOf(total)}` })).toBeDefined()
     expect(await ui.find({ key: 'more' })).toBeUndefined()
@@ -242,7 +242,7 @@ describe('Pane states', () => {
     await $.command.run(RUN)
     const ui = await mount($)
 
-    expect(await ui.find({ type: 'Text', text: /这个仓库还没有提交/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /This repository has no commits yet/ })).toBeDefined()
     await ui.unmount()
   })
 
@@ -264,7 +264,7 @@ describe('Pane states', () => {
     isFailing = true
     await ui.press({ key: 'refresh' })
 
-    expect(await ui.find({ type: 'Text', text: /无法读取 Git 历史:fatal: broken/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Could not read the Git history: fatal: broken/ })).toBeDefined()
     expect(await ui.find({ key: `commit-${HASH.m}` })).toBeDefined()
     await ui.unmount()
   })
@@ -274,7 +274,7 @@ describe('Pane states', () => {
     await $.command.run(RUN)
     const ui = await mount($)
 
-    expect(await ui.find({ type: 'Text', text: /无法读取 Git 历史/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Could not read the Git history/ })).toBeDefined()
     expect(await ui.find({ type: 'Text', text: /Loading/ })).toBeUndefined()
     await ui.unmount()
   })
@@ -505,7 +505,7 @@ describe('graph column and badges', () => {
 
     await ui.press({ key: 'file-diff-CLAUDE.md' })
 
-    expect(await ui.find({ key: 'close-file-diff' })).toBeDefined()
+    expect((await ui.find({ key: 'close-file-diff' }))?.text).toBe('✕ Close diff')
     expect(await ui.find({ type: 'Code' })).toBeDefined()
 
     await ui.press({ key: 'close-file-diff' })
@@ -513,6 +513,19 @@ describe('graph column and badges', () => {
     expect(await ui.find({ type: 'Code' })).toBeUndefined()
     expect(await ui.find({ key: 'close-file-diff' })).toBeUndefined()
     expect(await ui.find({ key: 'close-detail' })).toBeDefined()
+    await ui.press({ key: 'close-detail' })
+    await ui.unmount()
+  })
+
+  test('a file with no text changes says so instead of showing an empty diff', async ($, on) => {
+    serve(on, args => (args.includes('--unified=3') ? { stdout: '' } : route(args)))
+    await $.command.run(RUN)
+    const ui = await mount($)
+
+    await ui.press({ key: `commit-${HASH.m}` })
+    await ui.press({ key: 'file-diff-CLAUDE.md' })
+
+    expect(await ui.find({ type: 'Text', text: /No text changes to show/ })).toBeDefined()
     await ui.press({ key: 'close-detail' })
     await ui.unmount()
   })

@@ -132,7 +132,7 @@ export const register: Register = on => {
 
       return (
         <Box>
-          <Text dimColor>Git Graph 仅支持桌面应用。</Text>
+          <Text dimColor>Git Graph works only in the desktop app.</Text>
         </Box>
       )
     }
