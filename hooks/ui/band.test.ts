@@ -96,11 +96,13 @@ describe('AbovePrompt band', () => {
 
     await band.press({ key: 'open-graph' })
 
-    const pill = (await band.findAll({ type: 'Svg' })).find(svg => svg.props.alt === 'Branch feat/ui-polish')
+    const branch = await band.find({ key: 'current-branch' })
 
-    expect(pill).toBeDefined()
-    expect(String(pill?.props.source)).toContain('>feat/ui-polish</text>')
-    expect(String(pill?.props.source)).toContain('rx="9.5"')
+    expect(branch?.props.borderStyle).toBeUndefined()
+    expect(branch?.props.backgroundColor).toBeUndefined()
+    expect(await band.find({ type: 'Text', text: 'feat/ui-polish' })).toBeDefined()
+    expect((await band.find({ type: 'Text', text: 'feat/ui-polish' }))?.props.dimColor).toBe(true)
+    expect(await band.find({ type: 'Button', text: /feat\/ui-polish/ })).toBeUndefined()
     await band.unmount()
   })
 
@@ -111,7 +113,7 @@ describe('AbovePrompt band', () => {
     await band.press({ key: 'open-graph' })
     const meters = (await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)
 
-    expect(meters).toEqual(['Branch feat/ui-polish', 'Session 12%', 'Week 34%', 'Context 23%'])
+    expect(meters).toEqual(['Branch', 'Session 12%', 'Week 34%', 'Context 23%'])
     expect(await band.find({ type: 'Text', text: '$0.42' })).toBeDefined()
     expect(await band.find({ type: 'Text', text: 'Cost' })).toBeDefined()
     expect(await band.find({ type: 'Text', text: /↻/ })).toBeDefined()
@@ -125,7 +127,7 @@ describe('AbovePrompt band', () => {
 
     await band.press({ key: 'open-graph' })
 
-    expect((await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)).toEqual(['Branch feat/ui-polish'])
+    expect((await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)).toEqual(['Branch'])
     expect(await band.find({ type: 'Text', text: /Cost/ })).toBeUndefined()
     expect(await band.find({ key: 'open-graph' })).toBeDefined()
     await band.unmount()

@@ -2,7 +2,7 @@ import type { ElementTable } from 'claude-code'
 
 import type { UsageSnapshot } from '../../types'
 import { ellipsize } from '../format'
-import { branchPillSvg } from '../layout/branch-pill-svg'
+import { branchIconSvg } from '../layout/branch-icon-svg'
 import { usageRingSvg } from '../layout/usage-ring-svg'
 import { formatCost, levelColor, usageItems } from '../usage'
 import type { UsageItem } from '../usage'
@@ -11,6 +11,8 @@ type DesktopUi = ElementTable<'desktop'>
 
 const BRANCH_LABEL_MAX = 40
 const RING_SIZE = 16
+const BRANCH_ICON_SIZE = 14
+const BRANCH_ICON_COLOR = '#6e7781'
 
 // Every usage cell is this wide and its parts have fixed widths, so the cells of one row line up with the cells of
 // the next when the band wraps. Widths are in cells.
@@ -21,14 +23,18 @@ const COST_WIDTH = 10
 // Where the ring sits in a cell; the cost cell, which has no ring, leaves the same space.
 const RING_SLOT_WIDTH = 2
 
-// The branch the session is on, as an outlined pill with the git-branch glyph. One SVG, because a Box with a border
-// is three rows tall, which would stand well above the button beside it.
+// The branch the session is on: the git-branch glyph and the name, plain and dimmed, with no outline or fill, so it
+// does not read as a button. The glyph is an SVG in a mid grey; the name is a Text and follows the theme.
 function renderBranch(ui: DesktopUi, branch: string) {
-  const { Svg } = ui
-  const name = ellipsize(branch, BRANCH_LABEL_MAX)
-  const pill = branchPillSvg(name)
+  const { Box, Svg, Text } = ui
+  const icon = branchIconSvg(BRANCH_ICON_SIZE, BRANCH_ICON_COLOR)
 
-  return <Svg key="current-branch" source={pill.source} width={pill.width} height={pill.height} alt={`Branch ${branch}`} />
+  return (
+    <Box key="current-branch" flexDirection="row" alignItems="center" gap={1}>
+      <Svg source={icon.source} width={icon.width} height={icon.height} alt="Branch" />
+      <Text dimColor>{ellipsize(branch, BRANCH_LABEL_MAX)}</Text>
+    </Box>
+  )
 }
 
 function renderMeter(ui: DesktopUi, item: UsageItem) {
