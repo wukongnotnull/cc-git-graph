@@ -26,7 +26,11 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 用户在各个 Agent 工具里的提问和 AI 的回复,同步到**新建的 issue**。提问属于下面的类型时都要记录。
 
-**标题**参考 Conventional Commits:`<type>(<scope>): <description>`,如 `fix(pane): 修复展开状态下关闭面板白屏`。`scope` 是受影响的模块,用英文小写(`pane`、`band`、`detail`、`git`、`usage`、`readme`、`prd`、`ci` 等);`description` 简要说明,不加句号。
+**标题**参考 Conventional Commits:`<type>(<scope>): <description>`,如 `fix(pane): 修复展开状态下关闭面板白屏`。
+
+- `type`:Issue 类型,见下表,如 `feat`、`fix`、`docs`。
+- `scope`:影响范围,**可选**,用英文小写,如 `pane`、`band`、`detail`、`git`、`readme`;没有明确范围就省略,写成 `<type>: <description>`。
+- `description`:简短描述要解决的问题或完成的工作,不加句号。
 
 | 类型 | 标签 | 标题 type | 用途 |
 |---|---|---|---|
