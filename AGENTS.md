@@ -4,7 +4,7 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 ## 验证
 
-`claude plugin validate .`、`claude plugin test .`、`tsc -p . --noEmit`。CI 跑前两项。`plugin test` 要较新的 Claude Code,本机常跑不了,以 CI 为准;`tsc` 缺引擎类型时有已知的 `TS7006`、`TS6046`,只看新增的错误。没在桌面应用里看过的界面效果,要如实说没验证。
+`claude plugin validate .`、`claude plugin test .`、`tsc -p . --noEmit`。CI 跑前两项,Claude Code 版本锁在 `.github/workflows/ci.yml` 里,升级时单独开 PR。`plugin test` 要较新的 Claude Code,本机常跑不了,以 CI 为准;`tsc` 缺引擎类型时有已知的 `TS7006`、`TS6046`,只看新增的错误。没在桌面应用里看过的界面效果,要如实说没验证。
 
 ## 实测出来的约束
 

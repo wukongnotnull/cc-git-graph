@@ -1,6 +1,7 @@
 import type { EngineInterface } from 'claude-code'
 
 import { GIT_TIMEOUT_MS } from '../constants'
+import { describeError } from '../errors'
 
 const READ_ONLY = new Set(['log', 'show', 'for-each-ref', 'rev-parse'])
 const HASH_PATTERN = /^[0-9a-f]{40,64}$/
@@ -32,6 +33,13 @@ export function isCommitHash(value: string): boolean {
   return HASH_PATTERN.test(value)
 }
 
+// The engine rejects when git cannot start (most often it is not installed) or is still running at the timeout.
+function describeUnavailable(reason: string): string {
+  return /timed? ?out/i.test(reason)
+    ? `git did not answer within ${GIT_TIMEOUT_MS / 1000} seconds.`
+    : `Could not start git. Is it installed? (${reason})`
+}
+
 export async function runGit($: EngineInterface, args: readonly string[]): Promise<GitResult> {
   const argv = buildGitArgv(args)
 
@@ -40,7 +48,7 @@ export async function runGit($: EngineInterface, args: readonly string[]): Promi
   try {
     result = await $.process.run(argv, { env: ENGLISH_MESSAGES, timeoutMs: GIT_TIMEOUT_MS })
   } catch (error) {
-    return { ok: false, kind: 'unavailable', message: error instanceof Error ? error.message : String(error) }
+    return { ok: false, kind: 'unavailable', message: describeUnavailable(describeError(error)) }
   }
 
   if (result.isStdoutTruncated) {

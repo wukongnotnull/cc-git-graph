@@ -3,6 +3,7 @@ import type { ElementTable, EngineInterface, Register } from 'claude-code'
 import type { ViewState } from '../types'
 import { PANE_COLUMNS, PANE_ID } from './constants'
 import { openGraph } from './controller'
+import { describeError } from './errors'
 import { parseCurrentBranch } from './git/current-branch'
 import { runGit } from './git/run-git'
 import { snapshotOf } from './usage'
@@ -75,7 +76,7 @@ async function openBoard($: EngineInterface): Promise<string> {
     await openGraph(engineOf($))
   } catch (error) {
     // openGraph records load failures itself; this catches a failure of the state calls.
-    return `Git Graph: ${error instanceof Error ? error.message : String(error)}`
+    return `Git Graph: ${describeError(error)}`
   }
 
   return OPENED_TEXT

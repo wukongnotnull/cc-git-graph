@@ -13,6 +13,7 @@ import {
   toggleFileDiff,
   toggleRemote,
 } from '../controller'
+import { describeError } from '../errors'
 
 export type Actions = {
   selectBranch(value: string): void
@@ -35,13 +36,13 @@ export function makeActions($: EngineInterface): Actions {
       try {
         await task()
       } catch (error) {
-        $.ui.toast(`git-graph: ${error instanceof Error ? error.message : String(error)}`)
+        $.ui.toast(`git-graph: ${describeError(error)}`)
         await recordFailure($, error, generation)
       }
     }
 
     run().catch(error => {
-      $.ui.toast(`git-graph: ${error instanceof Error ? error.message : String(error)}`)
+      $.ui.toast(`git-graph: ${describeError(error)}`)
     })
   }
 
@@ -56,7 +57,7 @@ export function makeActions($: EngineInterface): Actions {
     toggleFileDiff: path => guard(() => toggleFileDiff($, path)),
     scrollToCommit: hash => {
       $.ui.scroll({ in: PANE_ID, to: { key: `row-${hash}` } }).catch(error => {
-        $.ui.toast(`git-graph: ${error instanceof Error ? error.message : String(error)}`)
+        $.ui.toast(`git-graph: ${describeError(error)}`)
       })
     },
   }
