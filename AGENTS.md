@@ -21,3 +21,13 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 ## 流程
 
 不直接推 `main`,从 `main` 切分支开 PR。提交信息 `<类型>: <描述>`。
+
+## 问答记录
+
+用户在各个 Agent 工具里的提问和 AI 的回复,用**新建 issue** 同步记录。
+
+- 每个提问新建一个 issue,正文写提问原文和 AI 回复的要点,注明来自哪个工具。
+- 类型和标签:新功能 `enhancement`、报告 bug `bug`、困惑咨询 `question`;标题前缀 `[feature]`、`[bug]`、`[question]`。
+- 同一个问题的后续追问、结论和进展,追加评论,不新开 issue;修复或实现它的 PR 用 `Closes #编号` 关联。
+- 不记录密钥、令牌等敏感内容。
+
