@@ -100,7 +100,7 @@ describe('runGit', () => {
     const broken = { process: { run: async () => { throw new Error('spawn failed') } } } as unknown as EngineInterface
     const result = await runGit(broken, ['log'])
 
-    expect(result).toEqual({ ok: false, kind: 'unavailable', message: 'spawn failed' })
+    expect(result).toEqual({ ok: false, kind: 'unavailable', message: 'Could not start git. Is it installed? (spawn failed)' })
   })
 
   test('bounds every git call with a timeout', async () => {
@@ -140,7 +140,7 @@ describe('runGit', () => {
     const hung = { process: { run: async () => { throw new Error('timed out after 10000 ms') } } } as unknown as EngineInterface
     const result = await runGit(hung, ['log'])
 
-    expect(result).toEqual({ ok: false, kind: 'unavailable', message: 'timed out after 10000 ms' })
+    expect(result).toEqual({ ok: false, kind: 'unavailable', message: 'git did not answer within 10 seconds.' })
   })
 
   test('throws for a non-allowed sub-command without calling the route', async ($, on) => {

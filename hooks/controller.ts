@@ -10,6 +10,7 @@ import { META_FORMAT, parseMeta, parseNumstat } from './git/parse-detail'
 import { parseFileDiff } from './git/parse-diff'
 import { isCommitHash, runGit } from './git/run-git'
 import type { GitFailure } from './git/run-git'
+import { describeError } from './errors'
 import { emptyLaneState, layoutCommits } from './layout/lanes'
 import { windowEnd } from './layout/window'
 import { initialView } from './state'
@@ -82,8 +83,6 @@ async function fail($: EngineInterface, failure: GitFailure, generation: number)
     }
   })
 }
-
-const describeError = (error: unknown): string => (error instanceof Error ? error.message : String(error))
 
 // Records a thrown error as the view's error. With a generation, a failure of a superseded load is dropped.
 export async function recordFailure($: EngineInterface, error: unknown, generation?: number): Promise<void> {
