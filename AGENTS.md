@@ -24,13 +24,9 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 ## 提问与回复同步到 Issue
 
-用户在各个 Agent 工具里的提问和 AI 的回复,同步到**新建的 issue**。提问属于下面的类型时都要记录。
+用户在各个 Agent 工具里的提问和 AI 的回复,同步记录为**新建的 issue**。
 
-**标题**参考 Conventional Commits:`<type>(<scope>): <description>`,如 `fix(pane): 修复展开状态下关闭面板白屏`。
-
-- `type`:Issue 类型,见下表,如 `feat`、`fix`、`docs`。
-- `scope`:影响范围,**可选**,用英文小写,如 `pane`、`band`、`detail`、`git`、`readme`;没有明确范围就省略,写成 `<type>: <description>`。
-- `description`:简短描述要解决的问题或完成的工作,不加句号。
+### 类型与标签
 
 | 类型 | 标签 | 标题 type | 用途 |
 |---|---|---|---|
@@ -47,6 +43,18 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 | Question | `question` | `question` | 使用咨询、技术问题 |
 | Discussion | `discussion` | `discussion` | 需要讨论后决定 |
 
-- 每个提问一个 issue:正文写提问原文和 AI 回复的要点,注明来自哪个工具。后续追问和进展追加评论,不新开;实现它的 PR 用 `Closes #编号` 关联。
-- 标签不存在就先 `gh label create`。同时符合多个类型时,选最主要的一个定标题 type,其余也可以加为标签。
+同时符合多个类型时,选最主要的定标题 type,其余加为标签。标签不存在就先 `gh label create`。
+
+### 标题
+
+`<type>(<scope>): <description>`,参考 Conventional Commits,如 `fix(pane): 修复展开状态下关闭面板白屏`。
+
+- `type`:上表的"标题 type"。
+- `scope`:影响范围,**可选**,英文小写,如 `pane`、`band`、`detail`、`git`、`readme`;没有明确范围就写成 `<type>: <description>`。
+- `description`:简短描述要解决的问题或完成的工作,不加句号。
+
+### 正文与后续
+
+- 每个提问一个 issue。正文写**提问原文**、**AI 回复的要点**,并注明来自哪个工具。
+- 后续追问和进展追加评论,不新开 issue;实现它的 PR 用 `Closes #编号` 关联。
 - 不记录密钥、令牌等敏感内容。
