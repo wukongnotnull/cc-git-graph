@@ -22,3 +22,5 @@ jobs:
         run: claude plugin validate .
       - name: Run the plugin tests
         run: claude plugin test .
+      - name: Type-check
+        run: npx -y -p typescript@5.6.3 tsc -p ci

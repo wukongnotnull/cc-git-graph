@@ -4,7 +4,9 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 ## 验证
 
-`claude plugin validate .`、`claude plugin test .`、`tsc -p . --noEmit`。CI 跑前两项,Claude Code 版本锁在 `.github/workflows/ci.yml` 里,升级时单独开 PR。`plugin test` 要较新的 Claude Code,本机常跑不了,以 CI 为准;`tsc` 缺引擎类型时有已知的 `TS7006`、`TS6046`,只看新增的错误。没在桌面应用里看过的界面效果,要如实说没验证。
+`claude plugin validate .`、`claude plugin test .`、`npx -y -p typescript@5.6.3 tsc -p ci`,CI 三项都跑。Claude Code 版本锁在 `.github/workflows/ci.yml` 里,升级时单独开 PR。`plugin test` 要较新的 Claude Code,本机版本不够时用 `npx -y @anthropic-ai/claude-code@<CI 里的版本> plugin test .`。
+
+类型检查用的引擎声明是提交进仓库的快照 `ci/types/claude-code.d.ts`(第一行写着生成它的版本):引擎只在会话里加载 mod 时写类型,CI 里生成不了。升级 CI 的 Claude Code 时一起刷新:在新版本的会话里加载 `plugin-authoring` skill,它会写出单文件声明,复制过来覆盖。TypeScript 要 5.4 以上,本机全局的旧 tsc 会报 `TS6046`、`TS7006`,不要用它判断。没在桌面应用里看过的界面效果,要如实说没验证。
 
 ## 实测出来的约束
 

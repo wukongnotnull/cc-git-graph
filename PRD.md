@@ -208,7 +208,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 | 兼容性 | 仅支持 desktop surface(该 surface 提供 `Svg`、`Input`、`Select`、`Code`);其他 surface 只显示提示 |
 | 可访问性 | 泳道配色对红绿色盲友好(不出现红绿对,同时靠亮度区分);当前分支、标签的徽章有 ●、◆ 标记,不只靠颜色;徽章文字按底色亮度选白色或近黑色 |
 | 可维护性 | 仓库根目录即 mod,结构为 `.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json`、`hooks/`、`types/` |
-| 质量保障 | `claude plugin validate` 和 `claude plugin test` 在 CI 上对每个 PR 运行并要求通过(CI 锁定 Claude Code 版本,升级时单独改);`tsc` 需要引擎类型,只在本地(装有较新 Claude Code 时)运行,尚未进 CI;git 输出解析、泳道布局、窗口、徽章分组、列规划、控制器和面板渲染都有单元测试 |
+| 质量保障 | `claude plugin validate` 和 `claude plugin test` 在 CI 上对每个 PR 运行并要求通过(CI 锁定 Claude Code 版本,升级时单独改);`tsc` 用提交进仓库的引擎声明快照(`ci/types/`)在 CI 上运行;git 输出解析、泳道布局、窗口、徽章分组、列规划、控制器和面板渲染都有单元测试 |
 
 ---
 
@@ -265,7 +265,6 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 
 - 打开面板时请求的 100 列默认宽度,桌面应用是否采用(需要在干净状态下实测)。
 - 在干净环境里按 README 从头走一遍安装流程(目前没有他人验证过)。
-- `tsc` 是否进 CI(需要 CI 里有引擎类型)。
 - 按钮条里的用量数字与应用自己的用量页是否一致(目前没有逐项对照)。
 - 首屏打开的耗时目标(没有确认定量指标)。
 - 后续迭代:搜索、自动刷新、终端或 VS Code surface 支持、写操作、悬停显示完整名称。
