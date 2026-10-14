@@ -32,7 +32,21 @@ const PANE = {
   view: {},
 }
 
-const serve = (on: On, opens: string[], calls: string[][] = [], widths: (number | undefined)[] = []): void => {
+const NOW_RESET = new Date(2099, 0, 1, 6, 0).toISOString()
+
+// What `$.session.usage()` answers in these tests: the account's two windows, the context window and the cost.
+const USAGE = {
+  startedAt: 0,
+  context: { window: 1_000_000, percent: 23 },
+  rateLimits: [
+    { kind: 'five_hour', percentUsed: 12.4, resetsAt: NOW_RESET },
+    { kind: 'seven_day', percentUsed: 34, resetsAt: NOW_RESET },
+  ],
+  cost: { usd: 0.42 },
+}
+
+const serve = (on: On, opens: string[], calls: string[][] = [], widths: (number | undefined)[] = [], usage: unknown = USAGE): void => {
+  on('session.usage', () => ({ value: usage as never }))
   // Where the plugin passes, the engine draws its own band: nothing beneath the plugin does that in a test.
   on('ui.render', () => ({ type: 'engine' as const, ref: 0 }))
   on('ui.open', (_$, e) => {
@@ -82,7 +96,40 @@ describe('AbovePrompt band', () => {
 
     await band.press({ key: 'open-graph' })
 
-    expect(await band.find({ type: 'Text', text: /⎇ feat\/ui-polish/ })).toBeDefined()
+    const branch = await band.find({ key: 'current-branch' })
+
+    expect(branch?.props.borderStyle).toBeUndefined()
+    expect(branch?.props.backgroundColor).toBeUndefined()
+    expect(await band.find({ type: 'Text', text: 'feat/ui-polish' })).toBeDefined()
+    expect((await band.find({ type: 'Text', text: 'feat/ui-polish' }))?.props.dimColor).toBe(true)
+    expect(await band.find({ type: 'Button', text: /feat\/ui-polish/ })).toBeUndefined()
+    await band.unmount()
+  })
+
+  test('shows the usage windows, the context window and the cost on the right', async ($, on) => {
+    serve(on, [])
+    const band = await $.ui.mount({ plugin: PLUGIN, surface: 'desktop', component: 'AbovePrompt', props: BAND })
+
+    await band.press({ key: 'open-graph' })
+    const meters = (await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)
+
+    expect(meters).toEqual(['Branch', 'Session 12%', 'Week 34%', 'Context 23%'])
+    expect(await band.find({ type: 'Text', text: '$0.42' })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: 'Cost' })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: /↻/ })).toBeDefined()
+    expect(String((await band.findAll({ type: 'Svg' })).at(1)?.props.source)).toContain('<circle')
+    await band.unmount()
+  })
+
+  test('shows no meters where the engine has no usage figures', async ($, on) => {
+    serve(on, [], [], [], { startedAt: 0, context: { window: 200_000 }, rateLimits: [] })
+    const band = await $.ui.mount({ plugin: PLUGIN, surface: 'desktop', component: 'AbovePrompt', props: BAND })
+
+    await band.press({ key: 'open-graph' })
+
+    expect((await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)).toEqual(['Branch'])
+    expect(await band.find({ type: 'Text', text: /Cost/ })).toBeUndefined()
+    expect(await band.find({ key: 'open-graph' })).toBeDefined()
     await band.unmount()
   })
 
@@ -94,7 +141,7 @@ describe('AbovePrompt band', () => {
     await band.press({ key: 'open-graph' })
 
     expect(await band.find({ key: 'open-graph' })).toBeDefined()
-    expect(await band.find({ key: 'current-branch' })).toBeUndefined()
+    expect((await band.findAll({ type: 'Svg' })).length).toBe(0)
     await band.unmount()
   })
 

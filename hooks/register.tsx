@@ -5,6 +5,7 @@ import { PANE_COLUMNS, PANE_ID } from './constants'
 import { openGraph } from './controller'
 import { parseCurrentBranch } from './git/current-branch'
 import { runGit } from './git/run-git'
+import { snapshotOf } from './usage'
 import { initialView } from './state'
 import { makeActions } from './ui/actions'
 import { renderBand } from './ui/band'
@@ -13,6 +14,7 @@ import { renderPane } from './ui/pane'
 const OPENED_TEXT = 'Git Graph opened.'
 const VIEW_REF = { plugin: 'cc-git-graph', key: 'view' } as const
 const BRANCH_REF = { plugin: 'cc-git-graph', key: 'branch' } as const
+const USAGE_REF = { plugin: 'cc-git-graph', key: 'usage' } as const
 
 // The hooks loader follows `$` only into functions declared in this file, never across an
 // import, and refuses `$` being spread or returned. It also wants every state reference
@@ -47,10 +49,21 @@ async function refreshBranch($: EngineInterface): Promise<void> {
   await $.state.set(BRANCH_REF, result.ok ? parseCurrentBranch(result.stdout) : '')
 }
 
+// The usage figures are a nicety: where the engine has none (it never throws for that) or a host cannot answer,
+// the band simply shows no meters, and opening the pane must not depend on them.
+async function refreshUsage($: EngineInterface): Promise<void> {
+  try {
+    await $.state.set(USAGE_REF, snapshotOf(await $.session.usage()))
+  } catch {
+    // Left as it was: the meters keep the last figures, or stay hidden.
+  }
+}
+
 // Opens the pane and loads the graph. Both the command and the band's button come here;
 // `$` has to stay a plain parameter so the hooks loader can follow it.
 async function openBoard($: EngineInterface): Promise<string> {
   await refreshBranch($)
+  await refreshUsage($)
 
   const opened = await $.ui.open({ id: PANE_ID, title: 'Git Graph', columns: PANE_COLUMNS })
 
@@ -72,6 +85,14 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'git-graph', description: 'Open the Git graph board' })
     await refreshBranch($)
+    await refreshUsage($)
+
+    return next(e)
+  })
+
+  // Pushed by the engine after each turn and whenever a rate-limit window moves a whole point.
+  on('session.measure', async ($, e, next) => {
+    await $.state.set(USAGE_REF, snapshotOf(e))
 
     return next(e)
   })
@@ -93,8 +114,10 @@ export const register: Register = on => {
 
     const ui = $.ui.resolve(e) as ElementTable<'desktop'>
     const { value: branch = '' } = await $.state.get(BRANCH_REF)
+    const { value: usage } = await $.state.get(USAGE_REF)
 
-    return renderBand(ui, branch, () => {
+    // Only to tell a reset later today from one on another day, so the module's own Date is enough and nothing waits on the engine's clock.
+    return renderBand(ui, branch, usage, new Date().getTime(), () => {
       openBoard($).then(text => {
         if (text !== OPENED_TEXT) {
           $.ui.toast(text)

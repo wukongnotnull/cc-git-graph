@@ -61,6 +61,13 @@ export type CommitDetail = {
   files: FileChange[]
 }
 
+// What the band above the prompt shows of the account's usage and the session's context and cost.
+export type UsageSnapshot = {
+  rateLimits: { kind: string; percentUsed: number; resetsAt?: string }[]
+  contextPercent?: number
+  costUsd?: number
+}
+
 export type ViewStatus = 'idle' | 'loading' | 'ready' | 'no-repo' | 'error'
 
 export type ViewState = {
@@ -86,6 +93,6 @@ export type ViewState = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'cc-git-graph': { view: ViewState; branch: string }
+    'cc-git-graph': { view: ViewState; branch: string; usage: UsageSnapshot }
   }
 }
