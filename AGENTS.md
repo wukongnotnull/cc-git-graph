@@ -24,10 +24,23 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 ## 问答记录
 
-用户在各个 Agent 工具里的提问和 AI 的回复,用**新建 issue** 同步记录。
+用户在各个 Agent 工具里的提问和 AI 的回复,同步到**新建的 issue**。提问属于下面的类型时都要记录,标签即类型,标题前缀用 `[标签]`:
 
-- 每个提问新建一个 issue,正文写提问原文和 AI 回复的要点,注明来自哪个工具。
-- 类型和标签:新功能 `enhancement`、报告 bug `bug`、困惑咨询 `question`;标题前缀 `[feature]`、`[bug]`、`[question]`。
-- 同一个问题的后续追问、结论和进展,追加评论,不新开 issue;修复或实现它的 PR 用 `Closes #编号` 关联。
+| 类型 | 标签 | 用途 |
+|---|---|---|
+| Bug | `bug` | 已有功能出现错误 |
+| Feature | `feature` | 提出新功能 |
+| Improvement | `enhancement` | 改进已有功能 |
+| Documentation | `documentation` | 文档新增或修改 |
+| UI/UX | `ui` | 界面、交互体验问题 |
+| Refactor | `refactor` | 重构代码,不改变功能 |
+| Performance | `performance` | 性能优化 |
+| Test | `test` | 测试相关工作 |
+| Security | `security` | 安全问题 |
+| Chore | `chore` | 工程、依赖、配置等维护 |
+| Question | `question` | 使用咨询、技术问题 |
+| Discussion | `discussion` | 需要讨论后决定 |
+
+- 每个提问一个 issue:正文写提问原文和 AI 回复的要点,注明来自哪个工具。后续追问和进展追加评论,不新开;实现它的 PR 用 `Closes #编号` 关联。
+- 标签不存在就先 `gh label create`。同时符合多个类型时,选最主要的一个作标题前缀,其余也可以加为标签。
 - 不记录密钥、令牌等敏感内容。
-
