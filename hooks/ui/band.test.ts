@@ -96,9 +96,11 @@ describe('AbovePrompt band', () => {
 
     await band.press({ key: 'open-graph' })
 
-    expect(await band.find({ key: 'current-branch' })).toBeDefined()
-    expect(await band.find({ type: 'Text', text: 'feat/ui-polish' })).toBeDefined()
-    expect((await band.find({ key: 'current-branch' }))?.props.borderStyle).toBe('round')
+    const pill = (await band.findAll({ type: 'Svg' })).find(svg => svg.props.alt === 'Branch feat/ui-polish')
+
+    expect(pill).toBeDefined()
+    expect(String(pill?.props.source)).toContain('>feat/ui-polish</text>')
+    expect(String(pill?.props.source)).toContain('rx="9.5"')
     await band.unmount()
   })
 
@@ -109,8 +111,9 @@ describe('AbovePrompt band', () => {
     await band.press({ key: 'open-graph' })
     const meters = (await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)
 
-    expect(meters).toEqual(['Branch', 'Session 12%', 'Week 34%', 'Context 23%'])
-    expect(await band.find({ type: 'Text', text: 'Cost $0.42' })).toBeDefined()
+    expect(meters).toEqual(['Branch feat/ui-polish', 'Session 12%', 'Week 34%', 'Context 23%'])
+    expect(await band.find({ type: 'Text', text: '$0.42' })).toBeDefined()
+    expect(await band.find({ type: 'Text', text: 'Cost' })).toBeDefined()
     expect(await band.find({ type: 'Text', text: /↻/ })).toBeDefined()
     expect(String((await band.findAll({ type: 'Svg' })).at(1)?.props.source)).toContain('<circle')
     await band.unmount()
@@ -122,7 +125,7 @@ describe('AbovePrompt band', () => {
 
     await band.press({ key: 'open-graph' })
 
-    expect((await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)).toEqual(['Branch'])
+    expect((await band.findAll({ type: 'Svg' })).map(svg => svg.props.alt)).toEqual(['Branch feat/ui-polish'])
     expect(await band.find({ type: 'Text', text: /Cost/ })).toBeUndefined()
     expect(await band.find({ key: 'open-graph' })).toBeDefined()
     await band.unmount()
@@ -136,7 +139,7 @@ describe('AbovePrompt band', () => {
     await band.press({ key: 'open-graph' })
 
     expect(await band.find({ key: 'open-graph' })).toBeDefined()
-    expect(await band.find({ key: 'current-branch' })).toBeUndefined()
+    expect((await band.findAll({ type: 'Svg' })).length).toBe(0)
     await band.unmount()
   })
 

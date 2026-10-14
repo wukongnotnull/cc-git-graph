@@ -2,7 +2,7 @@ import type { ElementTable } from 'claude-code'
 
 import type { UsageSnapshot } from '../../types'
 import { ellipsize } from '../format'
-import { branchIconSvg } from '../layout/branch-icon-svg'
+import { branchPillSvg } from '../layout/branch-pill-svg'
 import { usageRingSvg } from '../layout/usage-ring-svg'
 import { formatCost, levelColor, usageItems } from '../usage'
 import type { UsageItem } from '../usage'
@@ -11,21 +11,24 @@ type DesktopUi = ElementTable<'desktop'>
 
 const BRANCH_LABEL_MAX = 40
 const RING_SIZE = 16
-const BRANCH_ICON_SIZE = 14
-const BRANCH_ICON_COLOR = '#6e7781'
 
-// The branch the session is on: a rounded outline, the git-branch glyph and the name, as the Git Graph pane's own
-// toolbar draws a branch. The border comes from the Box; the name is a Text, so it follows the theme.
+// Every usage cell is this wide and its parts have fixed widths, so the cells of one row line up with the cells of
+// the next when the band wraps. Widths are in cells.
+const CELL_WIDTH = 27
+const LABEL_WIDTH = 7
+const PERCENT_WIDTH = 4
+const COST_WIDTH = 10
+// Where the ring sits in a cell; the cost cell, which has no ring, leaves the same space.
+const RING_SLOT_WIDTH = 2
+
+// The branch the session is on, as an outlined pill with the git-branch glyph. One SVG, because a Box with a border
+// is three rows tall, which would stand well above the button beside it.
 function renderBranch(ui: DesktopUi, branch: string) {
-  const { Box, Svg, Text } = ui
-  const icon = branchIconSvg(BRANCH_ICON_SIZE, BRANCH_ICON_COLOR)
+  const { Svg } = ui
+  const name = ellipsize(branch, BRANCH_LABEL_MAX)
+  const pill = branchPillSvg(name)
 
-  return (
-    <Box key="current-branch" flexDirection="row" alignItems="center" gap={1} borderStyle="round" paddingX={1}>
-      <Svg source={icon.source} width={icon.width} height={icon.height} alt="Branch" />
-      <Text>{ellipsize(branch, BRANCH_LABEL_MAX)}</Text>
-    </Box>
-  )
+  return <Svg key="current-branch" source={pill.source} width={pill.width} height={pill.height} alt={`Branch ${branch}`} />
 }
 
 function renderMeter(ui: DesktopUi, item: UsageItem) {
@@ -34,17 +37,39 @@ function renderMeter(ui: DesktopUi, item: UsageItem) {
   const percent = `${Math.round(item.percent)}%`
 
   return (
-    <Box key={item.key} flexDirection="row" alignItems="center" gap={1}>
-      <Svg source={ring.source} width={ring.width} height={ring.height} alt={`${item.label} ${percent}`} />
-      <Text dimColor>{item.label}</Text>
-      <Text>{percent}</Text>
-      {item.reset === '' ? null : <Text dimColor>{`↻ ${item.reset}`}</Text>}
+    <Box key={item.key} width={CELL_WIDTH} flexDirection="row" alignItems="center" gap={1}>
+      <Box width={RING_SLOT_WIDTH} flexShrink={0}>
+        <Svg source={ring.source} width={ring.width} height={ring.height} alt={`${item.label} ${percent}`} />
+      </Box>
+      <Box width={LABEL_WIDTH} flexShrink={0}>
+        <Text dimColor>{item.label}</Text>
+      </Box>
+      <Box width={PERCENT_WIDTH} flexShrink={0}>
+        <Text>{percent}</Text>
+      </Box>
+      {item.reset === '' ? null : <Text dimColor wrap="truncate">{`↻ ${item.reset}`}</Text>}
+    </Box>
+  )
+}
+
+function renderCost(ui: DesktopUi, costUsd: number) {
+  const { Box, Text } = ui
+
+  return (
+    <Box key="cost" width={CELL_WIDTH} flexDirection="row" alignItems="center" gap={1}>
+      <Box width={RING_SLOT_WIDTH} flexShrink={0} />
+      <Box width={LABEL_WIDTH} flexShrink={0}>
+        <Text dimColor>Cost</Text>
+      </Box>
+      <Box width={COST_WIDTH} flexShrink={0}>
+        <Text>{formatCost(costUsd)}</Text>
+      </Box>
     </Box>
   )
 }
 
 function renderUsage(ui: DesktopUi, usage: UsageSnapshot | undefined, nowMs: number) {
-  const { Box, Text } = ui
+  const { Box } = ui
 
   if (usage === undefined) {
     return null
@@ -57,15 +82,16 @@ function renderUsage(ui: DesktopUi, usage: UsageSnapshot | undefined, nowMs: num
   }
 
   return (
-    <Box key="usage" flexDirection="row" flexWrap="wrap" alignItems="center" columnGap={2} rowGap={0}>
+    <Box key="usage" flexDirection="row" flexWrap="wrap" alignItems="center" rowGap={0}>
       {items.map(item => renderMeter(ui, item))}
-      {usage.costUsd === undefined ? null : <Text key="cost" dimColor>{`Cost ${formatCost(usage.costUsd)}`}</Text>}
+      {usage.costUsd === undefined ? null : renderCost(ui, usage.costUsd)}
     </Box>
   )
 }
 
 // The button that opens the pane and the branch the session is on (nothing outside a repository) on the left;
-// on the right the account's usage windows as rings, the context window and what the session has cost.
+// on the right the account's usage windows as rings, the context window and what the session has cost, in cells that
+// line up when the band wraps.
 export function renderBand(ui: DesktopUi, branch: string, usage: UsageSnapshot | undefined, nowMs: number, onOpen: () => void) {
   const { Box, Button } = ui
 
