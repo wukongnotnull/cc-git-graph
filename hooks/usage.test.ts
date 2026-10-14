@@ -8,11 +8,11 @@ const at = (day: number, hour: number, minute: number): string => new Date(2026,
 
 describe('formatReset', () => {
   test('a reset later today shows the time only', () => {
-    expect(formatReset(at(14, 6, 0), NOW)).toBe('06:00 重置')
+    expect(formatReset(at(14, 6, 0), NOW)).toBe('06:00')
   })
 
   test('a reset on another day names the weekday', () => {
-    expect(formatReset(at(19, 6, 5), NOW)).toBe('周一 06:05 重置')
+    expect(formatReset(at(19, 6, 5), NOW)).toBe('Mon 06:05')
   })
 
   test('a missing or unreadable time gives nothing', () => {
@@ -54,15 +54,15 @@ describe('usageItems', () => {
       NOW,
     )
 
-    expect(items.map(item => item.label)).toEqual(['会话', '本周', '上下文'])
-    expect(items[1]?.reset).toBe('周一 06:00 重置')
+    expect(items.map(item => item.label)).toEqual(['Session', 'Week', 'Context'])
+    expect(items[1]?.reset).toBe('Mon 06:00')
     expect(items[2]?.reset).toBe('')
   })
 
   test('a window of an unknown kind keeps its own name and goes after the known ones', () => {
     const items = usageItems({ rateLimits: [{ kind: 'extra', percentUsed: 1 }, { kind: 'five_hour', percentUsed: 2 }] }, NOW)
 
-    expect(items.map(item => item.label)).toEqual(['会话', 'extra'])
+    expect(items.map(item => item.label)).toEqual(['Session', 'extra'])
   })
 
   test('shows nothing for a context window with no reading yet', () => {

@@ -11,17 +11,17 @@ export type UsageItem = {
   key: string
   label: string
   percent: number
-  // When the window resets, e.g. `周一 06:00 重置`; empty for the context window.
+  // When the window resets, e.g. `Mon 06:00` or `14:30`; empty for the context window.
   reset: string
 }
 
 const WINDOW_LABELS: Record<string, string> = {
-  five_hour: '会话',
-  seven_day: '本周',
-  spend_limit: '消费上限',
+  five_hour: 'Session',
+  seven_day: 'Week',
+  spend_limit: 'Spend',
 }
 
-const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const WARN_PERCENT = 80
 const DANGER_PERCENT = 95
 // Okabe-Ito colours, apart for red-green colour blindness, and told apart by lightness too.
@@ -39,7 +39,7 @@ export function snapshotOf(source: UsageSource): UsageSnapshot {
 
 const pad = (value: number): string => String(value).padStart(2, '0')
 
-// `14:30 重置` when the reset is today, `周一 06:00 重置` otherwise; empty for a time that cannot be read.
+// `14:30` when the reset is today, `Mon 06:00` otherwise; empty for a time that cannot be read.
 export function formatReset(iso: string | undefined, nowMs: number): string {
   if (iso === undefined) {
     return ''
@@ -55,7 +55,7 @@ export function formatReset(iso: string | undefined, nowMs: number): string {
   const isToday = at.getFullYear() === now.getFullYear() && at.getMonth() === now.getMonth() && at.getDate() === now.getDate()
   const time = `${pad(at.getHours())}:${pad(at.getMinutes())}`
 
-  return isToday ? `${time} 重置` : `周${WEEKDAYS[at.getDay()] ?? ''} ${time} 重置`
+  return isToday ? time : `${WEEKDAYS[at.getDay()] ?? ''} ${time}`
 }
 
 export function usageItems(usage: UsageSnapshot, nowMs: number): UsageItem[] {
@@ -72,7 +72,7 @@ export function usageItems(usage: UsageSnapshot, nowMs: number): UsageItem[] {
 
   return usage.contextPercent === undefined
     ? sorted
-    : [...sorted, { key: 'context', label: '上下文', percent: usage.contextPercent, reset: '' }]
+    : [...sorted, { key: 'context', label: 'Context', percent: usage.contextPercent, reset: '' }]
 }
 
 export function levelColor(percent: number): string {
