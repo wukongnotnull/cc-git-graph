@@ -44,7 +44,7 @@ function renderHeader(ui: DesktopUi, columns: number, plan: ColumnPlan) {
 }
 
 const describeFailure = (view: ViewState): string =>
-  view.status === 'error' ? `无法读取 Git 历史:${view.errorMessage}` : view.errorMessage
+  view.status === 'error' ? `Could not read the Git history: ${view.errorMessage}` : view.errorMessage
 
 function renderList(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumns: number) {
   const { Box, Button, Text } = ui
@@ -76,10 +76,10 @@ function renderList(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumn
   return (
     <Box flexDirection="column">
       {renderHeader(ui, columns, plan)}
-      {hasNewer ? <Button key="newer" label="↑ 较新的提交" onPress={() => actions.showNewer()} /> : null}
+      {hasNewer ? <Button key="newer" label="↑ Newer commits" onPress={() => actions.showNewer()} /> : null}
       {items}
       {view.errorMessage === '' ? null : <Text color="error">{describeFailure(view)}</Text>}
-      {hasOlder ? <Button key="more" label="加载更多" onPress={() => actions.showOlder()} /> : null}
+      {hasOlder ? <Button key="more" label="Load more" onPress={() => actions.showOlder()} /> : null}
     </Box>
   )
 }
@@ -93,7 +93,7 @@ function renderBody(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumn
   }
 
   if (view.status === 'no-repo') {
-    return <Text>当前目录不是 Git 仓库。</Text>
+    return <Text>This directory is not a Git repository.</Text>
   }
 
   if (view.status === 'error' && view.commits.length === 0) {
@@ -101,7 +101,7 @@ function renderBody(ui: DesktopUi, view: ViewState, actions: Actions, bodyColumn
   }
 
   if (view.commits.length === 0) {
-    return <Text dimColor>这个仓库还没有提交。</Text>
+    return <Text dimColor>This repository has no commits yet.</Text>
   }
 
   return renderList(ui, view, actions, bodyColumns)
