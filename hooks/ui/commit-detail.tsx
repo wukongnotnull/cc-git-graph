@@ -1,7 +1,7 @@
 import type { ElementTable } from 'claude-code'
 
 import type { FileDiff, ViewState } from '../../types'
-import { DETAIL_LABEL_WIDTH, DETAIL_WIDE_MIN } from '../constants'
+import { DETAIL_LABEL_WIDTH, DETAIL_WIDE_MIN, MAX_DETAIL_FILES, MAX_MESSAGE_CHARS } from '../constants'
 import { shortHash } from '../format'
 import type { Actions } from './actions'
 import { chipTitle, chipsOf, visibleRefs } from './chips'
@@ -86,6 +86,9 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
   const refs = chipsOf(visibleRefs(view.commits.find(commit => commit.hash === detail.hash)?.refs ?? [], view.isRemoteShown)).map(chipTitle)
 
   const isWide = bodyColumns >= DETAIL_WIDE_MIN
+  const files = detail.files.slice(0, MAX_DETAIL_FILES)
+  const unlisted = detail.files.length - files.length
+  const isMessageCut = detail.message.length > MAX_MESSAGE_CHARS
   const close = <Button key="close-detail" label="✕ Close" onPress={() => actions.toggleCommit(detail.hash)} />
 
   return (
@@ -112,14 +115,15 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
           {field(ui, 'Author:', `${detail.author} <${detail.authorEmail}>`)}
           {field(ui, 'Committer:', `${detail.committer} <${detail.committerEmail}>`)}
           {field(ui, 'Date:', detail.date)}
-          <Box marginTop={1}>
-            <Text wrap="wrap">{detail.message}</Text>
+          <Box key="detail-message" marginTop={1}>
+            <Text wrap="wrap">{isMessageCut ? `${detail.message.slice(0, MAX_MESSAGE_CHARS)}…` : detail.message}</Text>
           </Box>
+          {isMessageCut ? <Text dimColor>The message is long; only the first part is shown.</Text> : null}
           {view.detailError === '' ? null : <Text color="error">{view.detailError}</Text>}
         </Box>
         <Box key="detail-files" flexDirection="column" flexGrow={1} flexShrink={1} width={isWide ? 0 : undefined}>
           {isWide ? <Box justifyContent="flex-end">{close}</Box> : null}
-          {detail.files.map(file => (
+          {files.map(file => (
             <Box key={`file-${file.path}`} flexDirection="row" gap={1}>
               <Box flexGrow={1} flexShrink={1} width={0}>
                 <Button key={`file-diff-${file.path}`} plain onPress={() => actions.toggleFileDiff(file.path)}>
@@ -130,6 +134,7 @@ export function renderDetail(ui: DesktopUi, view: ViewState, loaded: ReadonlySet
               <Text color="diffRemoved">{file.deleted === null ? '-' : `-${file.deleted}`}</Text>
             </Box>
           ))}
+          {unlisted === 0 ? null : <Text key="files-more" dimColor>{`… and ${unlisted} more files`}</Text>}
         </Box>
       </Box>
       {renderFileDiff(ui, view.fileDiff, actions)}
