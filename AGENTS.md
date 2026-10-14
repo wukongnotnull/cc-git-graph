@@ -24,6 +24,16 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 不直接推 `main`,从 `main` 切分支开 PR。提交信息 `<类型>: <描述>`。
 
+## 发版
+
+版本号遵循 SemVer,`.claude-plugin/plugin.json` 和 `.claude-plugin/marketplace.json` 的 `version` 必须一致。使用者靠版本号变化收到更新,发布过的版本号不能复用。
+
+1. 从 `main` 切 `release/vX.Y.Z`,改两处 `version`,在 [CHANGELOG.md](CHANGELOG.md) 顶部加这一版(按 Added / Changed / Fixed 分组,注明 PR 编号),README、PRD 有变化的一并改。
+2. 开 PR,CI 通过、用户同意后合并。
+3. 在更新后的 `main` 上打 tag 并推送:`claude plugin tag . --push`(会先校验两处版本一致,tag 名 `cc-git-graph--vX.Y.Z`)。
+4. 建 Release:`gh release create cc-git-graph--vX.Y.Z --title vX.Y.Z --notes-file <这一版的 CHANGELOG 段落>`。
+5. tag 和 Release 是公开的,第 3、4 步要用户明确同意后再做。
+
 ## 提问与回复同步到 Issue
 
 用户在各个 Agent 工具里的提问和 AI 的回复,同步记录为**新建的 issue**。
