@@ -41,7 +41,7 @@ claude plugin install cc-git-graph@cc-git-graph
 
 ### 更新
 
-已安装的版本是安装时的副本。发布新版本时要同时修改 `.claude-plugin/plugin.json` 和 `.claude-plugin/marketplace.json` 里的 `version`,使用者再运行:
+已安装的版本是安装时的副本。有新版本时(见 [CHANGELOG.md](CHANGELOG.md) 和 [Releases](https://github.com/wukongnotnull/cc-git-graph/releases)),在终端运行:
 
 ```bash
 claude plugin update cc-git-graph
@@ -51,8 +51,9 @@ claude plugin update cc-git-graph
 
 - 需求:[PRD.md](PRD.md);技术设计:[docs/wukong-code/specs](docs/wukong-code/specs);实施计划:[docs/wukong-code/plans](docs/wukong-code/plans)。
 - 本地加载:在 `~/.claude/settings.json` 的 `env` 里设置 `CLAUDE_CODE_PLUGIN_DIRS` 为本仓库路径,并设置 `CLAUDE_CODE_PLUGIN_DIR_WATCH=1`。
-- 检查:`claude plugin validate .`、`tsc -p . --noEmit`、`claude plugin test .`。
-- 这些检查需要带有 `plugin test` 子命令的 Claude Code 版本,PATH 上的 `claude` 可能太旧;开发时用的是桌面应用自带的 2.1.295,以及 TypeScript 5.4 以上的 `tsc`。
+- 检查:`claude plugin validate .`、`claude plugin test .`、`npx -y -p typescript@5.6.3 tsc -p ci`,CI 三项都跑。
+- PATH 上的 `claude` 可能太旧、没有 `plugin test`,可以用 `npx -y @anthropic-ai/claude-code@2.1.299` 代替(与 CI 同版本)。
+- 发版流程见 [AGENTS.md](AGENTS.md) 的「发版」一节。
 
 ### 开发环境
 

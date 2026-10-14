@@ -6,7 +6,7 @@
     {
       "name": "cc-git-graph",
       "description": "Read-only Git graph board for Claude Code Desktop",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./"
     }
   ]
