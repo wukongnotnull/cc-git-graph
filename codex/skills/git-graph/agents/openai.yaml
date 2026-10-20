@@ -1,4 +1,4 @@
 interface:
   display_name: "Git Graph"
   short_description: "Open the current repository's read-only Git graph"
-  default_prompt: "Use $git-graph to open the current repository's Git graph in the Codex side panel."
+  default_prompt: "Use $git-graph to open the current repository's Git graph in the Codex side panel. Stay silent on success; reply only if opening or verification fails."
