@@ -5,5 +5,5 @@
     "noUncheckedIndexedAccess": true, "noEmit": true, "skipLibCheck": true,
     "esModuleInterop": true
   },
-  "include": ["cli.ts", "server.ts", "repository.ts", "*.check.ts"]
+  "include": ["cli.ts", "open.ts", "launch.ts", "server.ts", "repository.ts", "*.check.ts"]
 }
