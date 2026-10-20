@@ -23,7 +23,9 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 ## Codex 图谱入口
 
-用户要求在 Codex 打开图谱时,在本仓库执行 `npm --prefix codex ci`(首次)和 `npm --prefix codex run build`,再用持续运行的终端启动 `npm --prefix codex start -- --repo <当前项目绝对路径>`。用 Codex 的浏览器侧边页打开输出的完整 URL(含 fragment),并保留页面供用户查看。服务固定读取 `--repo`,结束时用 Ctrl+C。不要把带访问令牌的 URL 写进 issue、PR 或版本库。Codex 适配测试:`npm --prefix codex test`、`npm --prefix codex run typecheck`。
+优先使用 `codex/skills/git-graph` 的 Git Graph 技能,用户目录链接为 `~/.codex/skills/git-graph`。目标是当前聊天仓库,启动器路径来自技能真实路径,两者不可混淆。技能入口为 `/git-graph` 选择技能或 `$git-graph`,不注册原生 Tools 按钮。
+
+用户要求在 Codex 打开图谱时,在本仓库执行 `npm --prefix codex ci`(首次)和 `npm --prefix codex run build`,再用持续运行的终端执行 `npm --prefix codex run open -- --repo <当前项目绝对路径>`,启动或复用经认证且仓库一致的服务。用 Codex 的浏览器侧边页打开输出的完整 URL(含 fragment),并保留页面供用户查看。服务固定读取 `--repo`,结束时用 Ctrl+C。不要把带访问令牌的 URL 写进 issue、PR 或版本库。Codex 适配测试:`npm --prefix codex test`、`npm --prefix codex run typecheck`。
 
 `.codex/environments/environment.toml` 的 Git Graph Action 是顶部启动入口,执行安装、构建和启动,不自动打开侧边页。修改该配置时保留其他 setup/actions,并实际执行配置里的命令验证;无法操作 Codex 设置界面时,如实说明按钮显示与点击未验证。
 
