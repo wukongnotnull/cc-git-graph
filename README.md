@@ -13,7 +13,19 @@
 
 ## 在 Codex 中打开
 
-需要本机安装 Git、Node.js 22 或更新版本,并克隆本仓库。在本仓库目录执行一次:
+需要本机安装 Git、Node.js 22 或更新版本,并克隆本仓库。
+
+### 顶部 Git Graph 按钮
+
+项目提供 `.codex/environments/environment.toml` 本地环境配置,包含名为 **Git Graph** 的 Action。在 Codex 中打开本项目、加载该本地环境后,从顶部 Actions 中选择 **Git Graph**。它在集成终端里依次安装锁定的依赖、构建并启动当前项目的图谱服务;安装或构建失败时不会继续启动。命令面向 macOS/Linux 的 shell。
+
+将终端输出的完整地址交给 Codex 在内置浏览器侧边页打开。按钮负责启动服务,不会自动打开侧边页。终端需要保持运行,停止服务用 Ctrl+C。再次启动会生成新的端口和访问令牌。
+
+如果顶部没有显示该 Action,在 Codex 的本地环境设置里检查是否加载了本项目的 `cc-git-graph` 环境。这个配置提供的是顶部项目 Action,不是 Tools 内置列表里的新工具。
+
+### 手动启动
+
+在本仓库目录执行一次:
 
 ```bash
 npm --prefix codex ci
@@ -32,7 +44,7 @@ npm --prefix codex start -- --repo /absolute/path/to/repository
 
 Codex 版支持泳道、分支/远程筛选、手动刷新、每页 50 条的 Load more / Newer commits、提交详情与文件 diff。界面跟随浅色/深色主题,宽度不足时隐藏次要列。详情最多显示 50 个文件、4000 字符说明,diff 最多 3 万字符。
 
-服务只监听 `127.0.0.1`,固定读取启动时指定的仓库,沿用只读 Git 命令白名单与 10 秒超时;不上传仓库数据。仓库历史在翻页期间发生变化时,点击 Refresh 重新读取。当前交付是源码运行的网页适配,不注册 Codex 原生按钮或斜杠命令,也不显示 Claude 账号用量。
+服务只监听 `127.0.0.1`,固定读取启动时指定的仓库,沿用只读 Git 命令白名单与 10 秒超时;不上传仓库数据。仓库历史在翻页期间发生变化时,点击 Refresh 重新读取。当前交付是源码运行的网页适配,带项目启动 Action,不注册 Tools 内置工具或斜杠命令,也不显示 Claude 账号用量。
 
 ## Claude Code 安装
 

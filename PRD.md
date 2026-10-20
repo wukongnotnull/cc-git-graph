@@ -5,7 +5,7 @@
 | 项目 | 内容 |
 |---|---|
 | 产品名称 | cc-git-graph(Claude Code Git 图谱看板 mod) |
-| 文档版本 | v1.6 |
+| 文档版本 | v1.7 |
 | 文档状态 | Confirmed(v1 已实现;v1.4 补充用量显示) |
 | 创建日期 | 2026-10-13 |
 | 产品负责人 | wukongnotnull |
@@ -23,6 +23,7 @@
 | v1.4 | 2026-10-14 | 增加按钮条里的用量显示(FR-9):Session、Week 窗口,上下文占用,会话花费;当前分支改为不带边框的纯文字;补充对应的场景、验收、风险和决策 |
 | v1.5 | 2026-10-14 | 面板文字统一为英文(按钮、提示、错误文案);git 无法启动或超时时给出专门提示;更新对应描述和决策 |
 | v1.6 | 2026-10-20 | 增加 Codex 本地网页适配,见第 11 节;原 Claude mod 需求继续适用 |
+| v1.7 | 2026-10-20 | 增加 Codex 顶部 Git Graph 项目 Action,在集成终端安装、构建并启动图谱服务 |
 
 ---
 
@@ -276,7 +277,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 
 来源:用户在 Codex 中确认 [Issue #51](https://github.com/wukongnotnull/cc-git-graph/issues/51) 的方案。第 1–10 节的 mod API、按钮条和引擎限制针对 Claude Code;Codex 采用以下独立入口和运行方式。
 
-- **打开方式**:从源码安装并构建 `codex/`,用 Node.js 22+ 启动服务,显式传入当前项目或 worktree 的路径。Codex 在内置浏览器侧边页打开终端返回的完整 URL;不增加原生按钮或斜杠命令。关闭页面不会停止服务,终端 Ctrl+C 停止;重启端口和访问令牌更新。
+- **打开方式**:项目的 `.codex/environments/environment.toml` 声明 **Git Graph** Action。Codex 加载该本地环境后,通过顶部 Actions 入口在集成终端依次执行 `npm --prefix codex ci`、构建和启动命令,以当前工作目录为 `--repo`;安装或构建失败时停止。Action 命令面向 macOS/Linux shell,要求 Git、Node.js 22+ 与 npm。也可手动从源码安装并构建 `codex/`,启动时显式传入项目或 worktree 路径。Codex 在内置浏览器侧边页打开终端返回的完整 URL;Action 不自动打开侧边页,不向 Tools 内置区域注册新工具,也不注册斜杠命令。关闭页面不会停止服务,终端 Ctrl+C 停止;重启端口和访问令牌更新。
 - **数据与共享核心**:复用 Git 命令白名单、提交/引用/分支/元信息解析、泳道算法、SVG 和 diff 截断逻辑。服务只监听 IPv4 回环地址,启动后仓库路径固定;接口只接受 GET,验证 Host/Origin 和每次启动的随机访问令牌。只执行 `log`、`show`、`for-each-ref`、`rev-parse`,每次 10 秒超时,单次输出最多 8 MiB,`LC_ALL=C`;无 shell,禁用外部 diff 和 textconv,路径按字面量处理。
 - **图谱与交互**:英文界面,跟随系统浅色/深色主题;分支单选、远程开关、Refresh、提交详情和文件 diff。分支使用完整 ref 区分同名本地/远程分支。远程关闭后,远程分支选项、徽章和详情引用均隐藏。用网页原生 select,不受 Claude 的 64 项上限约束。
 - **分页**:每次读取 50 条;浏览器保留已加载历史用于连续泳道计算,每次展示 50 行,Load more 到更旧一页,Newer commits 返回。筛选或刷新回到首屏并收起详情。翻页期间仓库历史可能改变,用 Refresh 重新读取,不提供历史快照或自动刷新。

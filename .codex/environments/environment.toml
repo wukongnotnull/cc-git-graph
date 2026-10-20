@@ -1,0 +1,10 @@
+version = 1
+name = "cc-git-graph"
+
+[setup]
+script = ""
+
+[[actions]]
+name = "Git Graph"
+icon = "run"
+command = 'npm --prefix codex ci && npm --prefix codex run build && npm --prefix codex start -- --repo "$PWD"'
