@@ -1,0 +1,168 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { get } from 'node:http'
+import { startGraphServer } from './server'
+import type { Branches, Page } from './protocol'
+import type { CommitDetail } from '../types'
+import type { FileDiffText } from '../hooks/git/parse-diff'
+import { readDetail, readDiff, readGit, readPage } from './repository'
+
+test('serves real repository history, paging, branch filters, details and literal file diffs', async t => {
+  const repo = await mkdtemp(join(tmpdir(), 'cc-graph-'))
+  t.after(() => rm(repo, { recursive: true, force: true }))
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim()
+  git('init', '-b', 'main')
+  git('config', 'user.name', 'Graph Test')
+  git('config', 'user.email', 'graph@example.test')
+  await writeFile(join(repo, 'file.txt'), 'first\n')
+  await writeFile(join(repo, 'literal[1].txt'), 'literal\n')
+  git('add', '.')
+  git('commit', '-m', '<script>alert(1)</script>')
+  const root = git('rev-parse', 'HEAD')
+  git('branch', 'side')
+  for (let i = 0; i < 51; i++) git('commit', '--allow-empty', '-m', `Commit ${i}`)
+  git('update-ref', 'refs/remotes/origin/remote-only', root)
+  const before = git('status', '--porcelain')
+  const service = await startGraphServer(repo)
+  t.after(() => service.close())
+  const address = new URL(service.url)
+  const token = address.hash.slice(1)
+  const request = (path: string, init: RequestInit = {}) => fetch(new URL(path, address), {
+    ...init, headers: { Authorization: `Bearer ${token}`, ...init.headers },
+  })
+  const json = async <T>(path: string): Promise<T> => {
+    const response = await request(path)
+    assert.equal(response.status, 200, await response.clone().text())
+    return await response.json() as T
+  }
+  const page = await json<Page>('/api/commits')
+  assert.equal(page.commits.length, 50)
+  assert.equal(page.hasMore, true)
+  const older = await json<Page>('/api/commits?offset=50')
+  assert.equal(older.commits.length, 2)
+  assert.equal(older.hasMore, false)
+  assert.equal(older.commits[1]?.hash, root)
+  const side = await json<Page>('/api/commits?branch=refs%2Fheads%2Fside')
+  assert.equal(side.commits.length, 1)
+  assert.equal(side.commits[0]?.hash, root)
+  const branches = await json<Branches>('/api/branches')
+  assert.equal(branches.current, 'main')
+  assert.ok(branches.branches.some((branch: { ref: string }) => branch.ref === 'refs/remotes/origin/remote-only'))
+  const localOnly = await json<Page>('/api/commits?remote=false&offset=50')
+  assert.ok(localOnly.commits.every((commit: { refs: { kind: string }[] }) => commit.refs.every(ref => ref.kind !== 'remote')))
+  const detail = await json<CommitDetail>(`/api/detail?hash=${root}`)
+  assert.equal(detail.message, '<script>alert(1)</script>')
+  assert.ok(detail.files.some((file: { path: string }) => file.path === 'file.txt'))
+  const diff = await json<FileDiffText>(`/api/diff?hash=${root}&path=literal%5B1%5D.txt`)
+  assert.match(diff.text, /\+literal/)
+  assert.equal((await request(`/api/diff?hash=${root}&path=missing`)).status, 400)
+  assert.equal((await request('/api/commits?branch=--all')).status, 400)
+  assert.equal((await request('/api/commits?offset=-1')).status, 400)
+  assert.equal((await request('/api/detail?hash=HEAD')).status, 400)
+  assert.equal((await request('/api/commits', { method: 'POST' })).status, 405)
+  assert.equal((await fetch(new URL('/api/commits', address))).status, 401)
+  assert.equal((await request('/api/commits', { headers: { Origin: 'https://example.com' } })).status, 403)
+  const badHostStatus = await new Promise<number | undefined>((resolve, reject) => {
+    get(new URL('/api/commits', address), { headers: { Host: 'evil.example', Authorization: `Bearer ${token}` } }, response => {
+      response.resume()
+      resolve(response.statusCode)
+    }).on('error', reject)
+  })
+  assert.equal(badHostStatus, 403)
+  assert.match(await (await request('/')).text(), /Git Graph/)
+  assert.equal(git('status', '--porcelain'), before)
+})
+
+test('reports non-repositories and displays an empty repository without failing', async t => {
+  const repo = await mkdtemp(join(tmpdir(), 'cc-graph-empty-'))
+  t.after(() => rm(repo, { recursive: true, force: true }))
+  const service = await startGraphServer(repo)
+  t.after(() => service.close())
+  const url = new URL(service.url)
+  const headers = { Authorization: `Bearer ${url.hash.slice(1)}` }
+  const missing = await fetch(new URL('/api/commits', url), { headers })
+  assert.equal(missing.status, 422)
+  assert.match(await missing.text(), /not a git repository/i)
+  execFileSync('git', ['init', '-b', 'main'], { cwd: repo })
+  const empty = await fetch(new URL('/api/commits', url), { headers })
+  assert.equal(empty.status, 200)
+  assert.deepEqual(await empty.json(), { commits: [], hasMore: false })
+})
+
+test('keeps local/remote names distinct, handles detached HEAD and reads merge files literally', async t => {
+  const repo = await mkdtemp(join(tmpdir(), 'cc-graph-merge-'))
+  t.after(() => rm(repo, { recursive: true, force: true }))
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()
+  git('init', '-b', 'main')
+  git('config', 'user.name', 'Graph Test')
+  git('config', 'user.email', 'graph@example.test')
+  git('commit', '--allow-empty', '-m', 'Root')
+  const root = git('rev-parse', 'HEAD')
+  git('checkout', '-b', 'side')
+  const strange = 'tab\tand\nline[1].txt'
+  await writeFile(join(repo, strange), 'exact file\n')
+  await writeFile(join(repo, 'tab\tand\nline1.txt'), 'other file\n')
+  git('add', '.')
+  git('commit', '-m', 'Side')
+  const side = git('rev-parse', 'HEAD')
+  git('checkout', 'main')
+  git('merge', '--no-ff', 'side', '-m', 'Merge side')
+  const merge = git('rev-parse', 'HEAD')
+  const detail = await readDetail(repo, merge)
+  assert.equal(detail.parents.length, 2)
+  assert.ok(detail.files.some(file => file.path === strange))
+  const diff = await readDiff(repo, merge, strange)
+  assert.match(diff.text, /\+exact file/)
+  assert.doesNotMatch(diff.text, /other file/)
+  git('branch', 'origin/same', root)
+  git('update-ref', 'refs/remotes/origin/same', side)
+  const local = await readPage(repo, new URLSearchParams({ branch: 'refs/heads/origin/same' }))
+  const remote = await readPage(repo, new URLSearchParams({ branch: 'refs/remotes/origin/same' }))
+  assert.equal(local.commits[0]?.hash, root)
+  assert.equal(remote.commits[0]?.hash, side)
+  await assert.rejects(readPage(repo, new URLSearchParams({ branch: 'refs/remotes/origin/same', remote: 'false' })), /hidden/)
+  git('checkout', '--detach', root)
+  git('commit', '--allow-empty', '-m', 'Detached')
+  const detached = git('rev-parse', 'HEAD')
+  assert.ok((await readPage(repo, new URLSearchParams())).commits.some(commit => commit.hash === detached))
+  assert.throws(() => readGit(repo, ['checkout', 'main']), /not an allowed read-only command/)
+})
+
+test('commit control characters cannot fabricate rows or HTML fields', async t => {
+  const repo = await mkdtemp(join(tmpdir(), 'cc-graph-controls-'))
+  t.after(() => rm(repo, { recursive: true, force: true }))
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim()
+  git('init', '-b', 'main')
+  git('config', 'user.name', 'Graph Test')
+  git('config', 'user.email', 'graph@example.test')
+  git('commit', '--allow-empty', '-m', 'safe\x1e"><img src=/probe>\x1f\x1fAuthor\x1f1\x1f\x1fInjected')
+  const page = await readPage(repo, new URLSearchParams())
+  assert.equal(page.commits.length, 1)
+  assert.equal(page.commits[0]?.hash, git('rev-parse', 'HEAD'))
+  assert.match(page.commits[0]!.subject, /Injected/)
+})
+
+test('a service launched from a repository subdirectory can read root-relative file diffs', async t => {
+  const repo = await mkdtemp(join(tmpdir(), 'cc-graph-subdir-'))
+  t.after(() => rm(repo, { recursive: true, force: true }))
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim()
+  git('init', '-b', 'main')
+  git('config', 'user.name', 'Graph Test')
+  git('config', 'user.email', 'graph@example.test')
+  await mkdir(join(repo, 'sub'))
+  await writeFile(join(repo, 'sub/file.txt'), 'subdirectory change\n')
+  git('add', '.')
+  git('commit', '-m', 'Subdirectory')
+  const hash = git('rev-parse', 'HEAD')
+  const service = await startGraphServer(join(repo, 'sub'))
+  t.after(() => service.close())
+  const url = new URL(service.url)
+  const response = await fetch(new URL(`/api/diff?hash=${hash}&path=sub%2Ffile.txt`, url), { headers: { Authorization: `Bearer ${url.hash.slice(1)}` } })
+  assert.equal(response.status, 200)
+  const diff = await response.json() as FileDiffText
+  assert.match(diff.text, /\+subdirectory change/)
+})

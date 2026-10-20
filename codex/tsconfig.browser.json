@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "es2022", "lib": ["es2022", "dom", "dom.iterable"], "types": [],
+    "module": "esnext", "moduleResolution": "bundler", "strict": true,
+    "noUncheckedIndexedAccess": true, "noEmit": true, "skipLibCheck": true
+  },
+  "include": ["browser.ts", "render.ts", "protocol.ts"]
+}

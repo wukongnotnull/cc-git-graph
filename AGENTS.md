@@ -21,7 +21,11 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 叶子元素(`Svg`)查不到 `key`,按 `alt` 找。同一个 `Pane` 的状态跨挂载保留,下一次挂载前先收起上一次展开的状态。`expect` 没有 `toBeCloseTo`。git 输出用 `hooks/testing/fixtures.ts` 的 `serveGit` 模拟。
 
-## 流程
+## Codex 图谱入口
+
+用户要求在 Codex 打开图谱时,在本仓库执行 `npm --prefix codex ci`(首次)和 `npm --prefix codex run build`,再用持续运行的终端启动 `npm --prefix codex start -- --repo <当前项目绝对路径>`。用 Codex 的浏览器侧边页打开输出的完整 URL(含 fragment),并保留页面供用户查看。服务固定读取 `--repo`,结束时用 Ctrl+C。不要把带访问令牌的 URL 写进 issue、PR 或版本库。Codex 适配测试:`npm --prefix codex test`、`npm --prefix codex run typecheck`。
+
+## 分支流程
 
 不直接推 `main`,从 `main` 切分支开 PR。提交信息 `<类型>: <描述>`。
 
