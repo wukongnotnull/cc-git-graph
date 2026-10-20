@@ -107,7 +107,8 @@ export function createGraphMcpServer(options: Options = {}): Server {
         graphs.set(graphId, repository)
         return {
           content: [{ type: 'text', text: 'Git Graph opened.' }],
-          structuredContent: { graphId, repository, ...branches, ...page },
+          structuredContent: { graphId, repository },
+          _meta: { graph: { ...branches, ...page } },
         } satisfies CallToolResult
       }
       if (request.params.name !== 'read_git_graph') throw new Error('Unknown tool.')

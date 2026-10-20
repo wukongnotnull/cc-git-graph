@@ -52,7 +52,7 @@ async function invoke(client: Client, name: string, args: Record<string, unknown
 async function open(client: Client, args: Record<string, unknown> = {}): Promise<OpenGraph> {
   const result = await invoke(client, 'open_git_graph', args)
   assert.notEqual(result.isError, true, JSON.stringify(result.content))
-  return result.structuredContent as OpenGraph
+  return { ...result.structuredContent, ...(result._meta?.graph as Branches & Page) } as OpenGraph
 }
 async function read<T>(client: Client, graphId: string, operation: string, args: Record<string, unknown> = {}): Promise<T> {
   const result = await invoke(client, 'read_git_graph', {graphId, operation, ...args})
@@ -64,6 +64,22 @@ async function fails(client: Client, name: string, args: Record<string, unknown>
   assert.equal(result.isError, true, JSON.stringify(result))
   assert.match(JSON.stringify(result.content), pattern)
 }
+
+test('MCP open keeps initial history and branches out of model-readable results', async t => {
+  const {directory, git} = await repository(t)
+  git('branch', 'private-branch-name')
+  const client = await connect(t, {defaultRepository: directory})
+  const result = await invoke(client, 'open_git_graph')
+  assert.notEqual(result.isError, true, JSON.stringify(result.content))
+  assert.deepEqual(Object.keys(result.structuredContent!).sort(), ['graphId', 'repository'])
+  const modelReadable = JSON.stringify({content: result.content, structuredContent: result.structuredContent})
+  assert.doesNotMatch(modelReadable, /First commit|private-branch-name|MCP Test|mcp@example\.test/)
+  const graph = result._meta?.graph as Branches & Page
+  assert.equal(graph.current, 'main')
+  assert.ok(graph.branches.some(branch => branch.name === 'private-branch-name'))
+  assert.equal(graph.commits[0]?.subject, 'First commit')
+  assert.equal(graph.hasMore, false)
+})
 
 test('MCP open and app-only reads expose real history, filters, paging, detail and literal diff without writes', async t => {
   const {directory, git} = await repository(t, 52)
