@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es2023", "lib": ["es2023"], "types": ["node"],
+    "module": "commonjs", "moduleResolution": "node", "strict": true,
+    "noUncheckedIndexedAccess": true, "noEmit": true, "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": ["cli.ts", "server.ts", "repository.ts", "*.check.ts"]
+}

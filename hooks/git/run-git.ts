@@ -2,10 +2,9 @@ import type { EngineInterface } from 'claude-code'
 
 import { GIT_TIMEOUT_MS } from '../constants'
 import { describeError } from '../errors'
+import { buildGitArgv } from './argv'
+export { buildGitArgv, isCommitHash } from './argv'
 
-const READ_ONLY = new Set(['log', 'show', 'for-each-ref', 'rev-parse'])
-const HASH_PATTERN = /^[0-9a-f]{40,64}$/
-const FIXED_OPTIONS = ['-c', 'core.quotepath=false']
 // The failures below are told apart by git's messages, so git must not translate them.
 const ENGLISH_MESSAGES = { LC_ALL: 'C' }
 
@@ -18,20 +17,6 @@ export type GitResult =
     }
 
 export type GitFailure = Extract<GitResult, { ok: false }>
-
-export function buildGitArgv(args: readonly string[]): string[] {
-  const [sub] = args
-
-  if (sub === undefined || !READ_ONLY.has(sub)) {
-    throw new Error(`git ${sub ?? ''} is not an allowed read-only command`)
-  }
-
-  return ['git', ...FIXED_OPTIONS, ...args]
-}
-
-export function isCommitHash(value: string): boolean {
-  return HASH_PATTERN.test(value)
-}
 
 // The engine rejects when git cannot start (most often it is not installed) or is still running at the timeout.
 function describeUnavailable(reason: string): string {

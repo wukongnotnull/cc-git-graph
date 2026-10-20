@@ -1,0 +1,17 @@
+{
+  "name": "cc-git-graph-codex",
+  "version": "0.0.0",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "esbuild cli.ts --bundle --platform=node --target=node22 --outfile=dist/server.cjs && esbuild browser.ts --bundle --platform=browser --target=es2022 --outfile=dist/browser.js",
+    "start": "node dist/server.cjs",
+    "test": "npm run build && esbuild server.check.ts render.check.ts --bundle --platform=node --target=node22 --outdir=dist --out-extension:.js=.cjs && node --test dist/*.check.cjs",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "esbuild": "0.25.12",
+    "typescript": "5.6.3"
+  }
+}

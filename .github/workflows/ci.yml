@@ -24,3 +24,16 @@ jobs:
         run: claude plugin test .
       - name: Type-check
         run: npx -y -p typescript@5.6.3 tsc -p ci
+
+  codex:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: codex/package-lock.json
+      - run: npm --prefix codex ci
+      - run: npm --prefix codex test
+      - run: npm --prefix codex run typecheck
