@@ -241,7 +241,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 7. 在非 git 目录和非 desktop surface 下,给出清晰提示;git 失败或超时时显示原因,不停在加载中。
 8. 面板宽度变化时列按规则出现或隐藏,所有行和表头对齐;默认宽度下只显示图和描述。
 9. 按钮条显示 Session、Week、Context 圆环和 Cost,随对话和窗口变化更新,没有数据时不显示(FR-9)。
-10. `claude plugin validate` 和 `claude plugin test` 通过(CI);输出解析、泳道布局、窗口、用量等有单元测试。
+10. `claude plugin validate .`、`claude plugin validate claude` 和 `claude plugin test claude` 通过(CI);输出解析、泳道布局、窗口、用量等有单元测试。
 
 ---
 
@@ -308,7 +308,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 | 9 | 搜索 | v1 不含 |
 | 10 | 提交点击 | 点击展开详情区(由「不可点击」修订而来) |
 | 11 | 详情区文件列表 | 包含,平铺,带 `+n \| -n` |
-| 12 | mod 交付形式 | 仓库根目录即 mod |
+| 12 | mod 交付形式 | Claude mod 位于 `claude/`,Codex 插件位于 `codex/` |
 | 13 | 需求记录位置 | 仓库根目录 `PRD.md` |
 | 14 | 第二个打开入口 | 输入框上方的「Wukong Git Graph」按钮(左侧边栏和右上角菜单不可行),旁边显示当前分支 |
 | 15 | 列表很长时的显示方式 | 窗口显示:一次画一批行,「Load more」换窗口,「↑ Newer commits」换回 |
