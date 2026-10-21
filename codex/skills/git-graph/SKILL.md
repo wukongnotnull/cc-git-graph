@@ -1,39 +1,36 @@
 ---
 name: git-graph
-description: Use when the user invokes /git-graph or $git-graph, or asks to open the current local repository's Git graph in Codex.
+description: Use when the user invokes /git-graph or $git-graph, or asks to open a local repository's Git graph in Codex.
 ---
 
 # Git Graph
 
-Open the requested local repository's read-only Git graph in the Codex browser side panel.
+Open the requested repository in the installed Git Graph plugin's MCP Apps conversation panel. The default surface is the plugin panel.
 
 ## Quiet interaction
 
-For a normal invocation whose goal is only to open the graph, perform the work through tools without conversational output, subject to higher-priority instructions. Do not announce skill usage, narrate progress, print the URL in assistant messages, attach screenshots, or send a success confirmation.
+For a normal invocation whose only goal is to open the graph, use tools without conversational output, subject to higher-priority instructions. Do not announce skill usage, narrate progress, attach screenshots, print URLs, or send success prose. Tool activity indicators remain controlled by Codex.
 
-After verifying the requested graph or its valid empty-repository state and keeping the tab open, end with no assistant text. Starting/reusing a server or a queued browser-open request alone is not success. Recoverable intermediate errors remain silent if another permitted approach succeeds.
+After verifying the requested graph or its valid empty-repository state and leaving the panel open, end with no assistant text. If opening or verification fails, send one concise failure message with the cause and next useful step. If the user requests an explanation or report, answer that request. Higher-priority instructions can require messages.
 
-If the panel cannot be opened or verified, or it shows an error instead of the requested repository, send one concise failure message explaining the cause and the next useful step. If the service is available but automatic opening fails, the complete local URL may be provided in that failure message. If the user explicitly requests a report or explanation, answer that request. Tool activity indicators are controlled by Codex; this skill controls assistant prose only.
+## Open the plugin panel
 
-## Start or reuse the service
+1. Resolve the target to the **current chat's absolute working-directory path**, unless the user explicitly names another local repository or worktree. Pass that absolute path even when the MCP tool makes `repository` optional. A subdirectory is valid: the server resolves its repository root. Never substitute this skill's directory, the plugin cache, or its source checkout as the target.
+2. Find the installed Git Graph MCP tool `open_git_graph` (the host may prefix its tool name). Call it with `repository` set to the target absolute path, for example `{"repository":"/absolute/path/to/current/project"}`. The server retains a separate graph handle for each opened repository. Do not start or reuse an HTTP service for this path.
+3. Inspect the resulting **MCP Apps** panel using available panel inspection tooling. If using browser tooling, select the existing `mcpapps` surface; do not create a website tab. Verify that the panel shows **Git Graph**, the requested repository root, and its history or valid empty-repository state. Inspect without emitting a screenshot into the conversation. Preserve the panel for the user.
 
-- The target is the current chat's working directory, unless the user names another repository. Do not substitute this skill's checkout as the target.
-- Resolve this skill directory's real path (it may be symlinked). It lives at `<checkout>/codex/skills/git-graph`; two parents above the directory is the **launcher directory**, `<checkout>/codex`.
-- If the launcher directory has no `node_modules/.bin/esbuild`, run `npm --prefix "<launcher directory>" ci`. This requires Node.js 22+ and Git. If a prerequisite is missing or installation fails, report the error without continuing.
-- Build, then invoke the reusable launcher with quoted absolute paths:
+Calling the tool alone is not success. An unverified panel, wrong repository, UI error, or queued open without visible verification is a failure. A non-repository is an error; never silently open a different repository. Empty Git repositories are supported and count as success when the empty state is verified.
 
-```sh
-npm --prefix "<launcher directory>" run build && npm --prefix "<launcher directory>" run open -- --repo "<target repository absolute path>"
-```
+## Missing plugin or unavailable panel
 
-Run this in a managed, persistent terminal session. A newly started service keeps running and prints `Git Graph started.` plus its full URL. A verified existing service prints `Git Graph reused.` and the same URL, then the launcher exits. Keep the first service's terminal alive; Ctrl+C stops it. Do not start a second server just because the first command is still running.
+If `open_git_graph` is missing or Codex reports an unknown MCP server, explain that the formal **Git Graph** plugin must be installed/enabled and loaded in a **new local project chat**. Existing chats can retain stale tool bindings after installation or updates. The plugin also provides **More tools → Plugins and MCPs → Git Graph**. Do not treat that menu as proof a tool call or panel render succeeded.
 
-The launcher normalizes repository/subdirectory paths, validates the authenticated service identity and repository, and replaces dead or invalid cache records. A non-repository is an error; do not open a graph for a different directory. Runtime URL caches live in a user-private temporary directory, outside Git.
+If tools can open the graph but no available tool can inspect the MCP Apps panel, state that the panel could not be verified. Do not claim success or fall back to a guessed website. Do not install plugins globally, create chats, change settings, or replace an existing user skill as part of opening a graph.
 
-## Open and verify the side panel
+## Explicit browser fallback
 
-Use the complete localhost URL from the launcher, including its `#` fragment. Prefer the Codex `open_in_codex` tool with a browser target, or the available in-app browser tool. Reuse an existing tab for the same URL when available. If the browser tool requires marking the result as a deliverable, do so to keep it open for the user.
+Use the HTTP/browser path **only when the user explicitly requests the browser fallback**. It requires a source checkout with `codex/package.json`; the installed self-contained plugin does not contain the HTTP launcher. Locate that checkout independently from the target repository. If it is unavailable, report that prerequisite.
 
-Verify the browser shows **Git Graph** and the target repository's history or valid empty-repository state. Inspect without emitting screenshots into the conversation. A clear error in the page is a failure, not a successful open. Do not treat terminal output as proof that the panel opened. If no tool can open the side panel, provide the local URL and state that the page was not opened automatically.
+From the source checkout, run `npm --prefix codex ci` when dependencies are absent, then `npm --prefix codex run build` and `npm --prefix codex run open -- --repo "<target absolute path>"` in a persistent terminal. Use the launcher's complete authenticated localhost URL, including its fragment, to open and verify the browser side panel. Reuse a verified same-repository service; keep its owning terminal alive and use Ctrl+C to stop it. Never put the credential-bearing URL in issues, PRs, screenshots of the address bar, or tracked files.
 
-The URL contains a local access credential: do not put it in issues, PRs, screenshots of the address bar, or tracked files. Keep Git operations read-only. This skill does not change Codex settings, add native Tools buttons, or stop unrelated services.
+Keep all Git operations read-only. The MCP process lifecycle belongs to Codex; closing a panel does not require stopping unrelated processes.

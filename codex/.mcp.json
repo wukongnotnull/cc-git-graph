@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "git-graph": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${PLUGIN_ROOT}/mcp.cjs"
+      ]
+    }
+  }
+}

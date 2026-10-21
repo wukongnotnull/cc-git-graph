@@ -1,0 +1,22 @@
+{
+  "name": "cc-git-graph",
+  "version": "0.1.0",
+  "description": "Read-only Git graph panel for Codex Desktop",
+  "author": {
+    "name": "wukongnotnull"
+  },
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Git Graph",
+    "shortDescription": "Read-only local Git history",
+    "longDescription": "Open a local repository Git graph in a conversation panel, with branches, commit details and file diffs.",
+    "developerName": "wukongnotnull",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "defaultPrompt": "Open the current repository Git graph."
+  }
+}

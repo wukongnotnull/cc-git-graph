@@ -40,3 +40,12 @@ h2 { font-size:12px; font-weight:500; } h2 span { color:var(--muted); margin-lef
 @media (max-width:800px) { .hash { display:none; } main { padding:16px; } }
 @media (max-width:650px) { .date { display:none; } .toolbar { gap:10px; } .chip { max-width:100px; } .current { max-width:40%; } }
 @media (prefers-color-scheme:light) { :root { --bg:#fff; --panel:#f7f8fa; --border:#dce0e5; --text:#24292f; --muted:#66717f; --hover:#edf2f8; --accent:#1768a9; } .error { color:#8c2821; background:#fff0ee; } .added { color:#1c5b3d; background:#e5f6ec; } .deleted { color:#922e25; background:#ffebe8; } }
+.repository { overflow-wrap:anywhere; font-size:11px; color:var(--muted); margin:0 0 12px; }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#111315; --panel:#191c20; --border:#30343a; --text:#e3e6eb; --muted:#949ca8; --hover:#252b34; --accent:#78b9f5; }
+:root[data-theme="light"] { color-scheme:light; --bg:#fff; --panel:#f7f8fa; --border:#dce0e5; --text:#24292f; --muted:#66717f; --hover:#edf2f8; --accent:#1768a9; }
+:root[data-theme="dark"] .error { color:#ffb2a8; background:#452926; }
+:root[data-theme="dark"] .added { color:#9ddbbf; background:#18362b; }
+:root[data-theme="dark"] .deleted { color:#f4b7ad; background:#412724; }
+:root[data-theme="light"] .error { color:#8c2821; background:#fff0ee; }
+:root[data-theme="light"] .added { color:#1c5b3d; background:#e5f6ec; }
+:root[data-theme="light"] .deleted { color:#922e25; background:#ffebe8; }

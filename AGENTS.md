@@ -23,11 +23,15 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 ## Codex 图谱入口
 
-优先使用 `codex/skills/git-graph` 的 Git Graph 技能,用户目录链接为 `~/.codex/skills/git-graph`。目标是当前聊天仓库,启动器路径来自技能真实路径,两者不可混淆。技能入口为 `/git-graph` 选择技能或 `$git-graph`,不注册原生 Tools 按钮。
+默认使用正式插件内的 `codex/skills/git-graph` 技能,通过 `open_git_graph` 显式传入当前聊天仓库的绝对路径,再检查 MCP Apps 对话面板显示目标仓库的历史或有效空状态并保留。不是调用工具就算成功;错误仓库、UI 错误、未验证面板均为失败。默认成功不输出文字或截图,上层指令和用户要求报告时除外。More tools → Plugins and MCPs → Git Graph 来自 MCP thread entrypoint。工具缺失或 unknown MCP server 时确认插件启用并新开聊天,不要自动回退浏览器。
 
-用户要求在 Codex 打开图谱时,在本仓库执行 `npm --prefix codex ci`(首次)和 `npm --prefix codex run build`,再用持续运行的终端执行 `npm --prefix codex run open -- --repo <当前项目绝对路径>`,启动或复用经认证且仓库一致的服务。用 Codex 的浏览器侧边页打开输出的完整 URL(含 fragment),并保留页面供用户查看。服务固定读取 `--repo`,结束时用 Ctrl+C。不要把带访问令牌的 URL 写进 issue、PR 或版本库。Codex 适配测试:`npm --prefix codex test`、`npm --prefix codex run typecheck`。
+本地源码分发必须先在源码仓库执行 `npm --prefix codex ci`、`npm --prefix codex run build`,产物为忽略的自包含 `codex/dist/plugin`;根 `.agents/plugins/marketplace.json` 指向它。然后 `codex plugin marketplace add <本仓库绝对路径>`、`codex plugin add cc-git-graph@cc-git-graph-local`。未构建的 Git marketplace 安装不支持。修改源码后重新构建并重新安装/加载,旧聊天不会自动刷新工具绑定。Codex 插件版本独立于 Claude 清单版本,不要因此更改 Claude 版本。
 
-`.codex/environments/environment.toml` 的 Git Graph Action 是顶部启动入口,执行安装、构建和启动,不自动打开侧边页。修改该配置时保留其他 setup/actions,并实际执行配置里的命令验证;无法操作 Codex 设置界面时,如实说明按钮显示与点击未验证。
+不传路径时 MCP 依次采用客户端唯一文件系统 root、无 roots 能力时的进程工作目录;有多个/零个 root 或落在插件自身目录时要求显式目标,不能猜源码目录。子目录规范化到仓库根、worktree 独立;每个 graphId 固定仓库。stdio 进程由 Codex 管理,不启动 HTTP 守护进程。不得覆盖用户技能内容;检查旧 `~/.codex/skills/git-graph` 是本任务创建的链接后,仅移除该链接避免重复发现。
+
+仅用户明确要求浏览器回退时,独立定位包含 `codex/package.json` 的源码 checkout 及启动器,与目标仓库区分。在源码仓库构建后用持续运行终端执行 `npm --prefix codex run open -- --repo <目标绝对路径>`,验证/复用同仓库服务,用 Codex 浏览器侧边页打开完整 URL(含 fragment)并验证。首次启动终端保持运行,Ctrl+C 停止;不要把带令牌 URL 写进 issue、PR 或版本库。安装缓存内的插件不含 HTTP 启动器。Codex 适配测试:`npm --prefix codex test`、`npm --prefix codex run typecheck`;前者包含只复制插件包到空目录后的真实 stdio 启动测试。
+
+`.codex/environments/environment.toml` 的 Git Graph Action 保留为 HTTP 顶部启动入口,不自动打开侧边页。修改时保留其他 setup/actions 并实际执行命令;无法操作设置界面时,如实说明按钮显示与点击未验证。协议/构建通过不能当作桌面面板或菜单已验证。
 
 ## 分支流程
 
