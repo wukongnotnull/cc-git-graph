@@ -40,7 +40,7 @@ codex plugin add cc-git-graph@cc-git-graph-local
 
 从 More tools 打开而未传路径时,服务依次使用客户端提供的唯一文件系统 root、没有 roots 能力时的进程工作目录;多个 root、零 root、插件缓存目录或非仓库会明确要求选择目标或报错。子目录解析到仓库根,worktree 保持独立根路径。每个打开的视图保留自己的仓库句柄,已有面板不会随下一次打开而切到别的仓库。
 
-面板通过 Codex 管理的 stdio MCP 进程读取本地 Git,不启动 HTTP 守护进程,也不需要长期保留启动终端。进程的启停和重新加载由 Codex 管理;面板打开不创建新的项目聊天。当前构建和协议测试不能代替完整桌面图形验证,安装后的菜单、技能选择与面板交互需在桌面应用实测。
+面板通过 Codex 管理的 stdio MCP 进程读取本地 Git,不启动 HTTP 守护进程,也不需要长期保留启动终端。进程的启停和重新加载由 Codex 管理;面板打开不创建新的项目聊天。本机已验证正式插件启动、MCP Apps 面板中的仓库路径与历史、Refresh、Load more 和 Newer commits,并保存了面板截图。分支/远程筛选的自动验证通道出现超时,详情/diff 与原生菜单点选仍待完整桌面验收;协议测试不代替这些界面验证。
 
 Codex 版支持泳道、分支/远程筛选、Refresh、每页 50 条的 Load more / Newer commits、提交详情和文件 diff。界面跟随主题并按宽度隐藏次要列。详情最多显示 50 个文件、4000 字符说明,diff 最多 3 万字符。只执行 `log`、`show`、`for-each-ref`、`rev-parse`,每次 10 秒超时并以 `LC_ALL=C` 运行;不上传仓库数据。翻页期间历史发生变化时,点击 Refresh 重新读取。
 
