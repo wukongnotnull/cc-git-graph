@@ -1,8 +1,8 @@
-import { columnCount, emptyLaneState, layoutCommits } from '../hooks/layout/lanes'
-import { rowSvg } from '../hooks/layout/row-svg'
-import { chipTitle, chipsOf } from '../hooks/ui/chips'
-import { formatDate, shortHash } from '../hooks/format'
-import { MAX_DETAIL_FILES, MAX_MESSAGE_CHARS, PAGE_SIZE } from '../hooks/constants'
+import { columnCount, emptyLaneState, layoutCommits } from '../claude/hooks/layout/lanes'
+import { rowSvg } from '../claude/hooks/layout/row-svg'
+import { chipTitle, chipsOf } from '../claude/hooks/ui/chips'
+import { formatDate, shortHash } from '../claude/hooks/format'
+import { MAX_DETAIL_FILES, MAX_MESSAGE_CHARS, PAGE_SIZE } from '../claude/hooks/constants'
 import type { GraphState } from './protocol'
 
 export const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!)

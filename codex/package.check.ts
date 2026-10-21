@@ -57,13 +57,14 @@ test('built plugin has synchronized portable and Codex manifests and the local m
   assert.deepEqual(entry.source, {source: 'local', path: './codex/dist/plugin'})
   assert.equal(resolve(__dirname, '../..', entry.source.path), builtPackage)
 
-  const claudePlugin = await readJson(resolve(__dirname, '../../.claude-plugin/plugin.json'))
+  const claudePlugin = await readJson(resolve(__dirname, '../../claude/.claude-plugin/plugin.json'))
   const claudeMarketplace = await readJson(resolve(__dirname, '../../.claude-plugin/marketplace.json'))
   assert.equal(claudePlugin.name, 'wukong-git-graph')
   assert.equal(claudePlugin.version, '0.3.0')
   assert.equal(claudeMarketplace.name, 'wukong-git-graph')
   assert.equal(claudeMarketplace.plugins[0].name, claudePlugin.name)
   assert.equal(claudeMarketplace.plugins[0].version, claudePlugin.version)
+  assert.equal(claudeMarketplace.plugins[0].source, './claude')
 })
 
 test('isolated plugin package starts from either manifest and serves its HTML and explicit real repository', async t => {

@@ -1,5 +1,5 @@
-import type { Commit, CommitDetail } from '../types'
-import type { FileDiffText } from '../hooks/git/parse-diff'
+import type { Commit, CommitDetail } from '../claude/types'
+import type { FileDiffText } from '../claude/hooks/git/parse-diff'
 
 export type Branch = { ref: string; name: string; remote: boolean }
 export type Branches = { branches: Branch[]; current: string }

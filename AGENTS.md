@@ -4,22 +4,22 @@ Wukong Git Graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面
 
 ## 验证
 
-`claude plugin validate .`、`claude plugin test .`、`npx -y -p typescript@5.6.3 tsc -p ci`,CI 三项都跑。Claude Code 版本锁在 `.github/workflows/ci.yml` 里,升级时单独开 PR。`plugin test` 要较新的 Claude Code,本机版本不够时用 `npx -y @anthropic-ai/claude-code@<CI 里的版本> plugin test .`。
+`claude plugin validate .`、`claude plugin validate claude`、`claude plugin test claude`、`npx -y -p typescript@5.6.3 tsc -p claude/ci`,CI 都跑。Claude Code 版本锁在 `.github/workflows/ci.yml` 里,升级时单独开 PR。`plugin test` 要较新的 Claude Code,本机版本不够时用 `npx -y @anthropic-ai/claude-code@<CI 里的版本> plugin test claude`。
 
-类型检查用的引擎声明是提交进仓库的快照 `ci/types/claude-code.d.ts`(第一行写着生成它的版本):引擎只在会话里加载 mod 时写类型,CI 里生成不了。升级 CI 的 Claude Code 时一起刷新:在新版本的会话里加载 `plugin-authoring` skill,它会写出单文件声明,复制过来覆盖。TypeScript 要 5.4 以上,本机全局的旧 tsc 会报 `TS6046`、`TS7006`,不要用它判断。没在桌面应用里看过的界面效果,要如实说没验证。
+类型检查用的引擎声明是提交进仓库的快照 `claude/ci/types/claude-code.d.ts`(第一行写着生成它的版本):引擎只在会话里加载 mod 时写类型,CI 里生成不了。升级 CI 的 Claude Code 时一起刷新:在新版本的会话里加载 `plugin-authoring` skill,它会写出单文件声明,复制过来覆盖。TypeScript 要 5.4 以上,本机全局的旧 tsc 会报 `TS6046`、`TS7006`,不要用它判断。没在桌面应用里看过的界面效果,要如实说没验证。
 
 ## 实测出来的约束
 
-- **只读 git**:只能 `log`、`show`、`for-each-ref`、`rev-parse`(`hooks/git/run-git.ts` 有白名单)。每次调用 10 秒超时,并以 `LC_ALL=C` 运行(失败类型靠英文报错区分);每页 50 条,300 条一页会让 `$.process.run` 不返回。
-- **面板内容有上限**,超出的部分不画,后面的元素(包括列表底部的 Load more)一起消失。桌面应用实测 100 行约 20 万字符触顶;`plugin test` 里引擎会报 `N characters of text are drawn up to the first 99986`,key 也计入(一个文件约占路径长度的三倍)。所以列表按窗口显示(`hooks/layout/window.ts`,预算在 `constants.ts`),diff 限 3 万字符,详情最多列 50 个文件、说明最多 4000 字符。每行新增内容要计入窗口的开销估计;`hooks/ui/budget.test.ts` 用最坏情况检查 Load more 还在。
+- **只读 git**:只能 `log`、`show`、`for-each-ref`、`rev-parse`(`claude/hooks/git/run-git.ts` 有白名单)。每次调用 10 秒超时,并以 `LC_ALL=C` 运行(失败类型靠英文报错区分);每页 50 条,300 条一页会让 `$.process.run` 不返回。
+- **面板内容有上限**,超出的部分不画,后面的元素(包括列表底部的 Load more)一起消失。桌面应用实测 100 行约 20 万字符触顶;`plugin test` 里引擎会报 `N characters of text are drawn up to the first 99986`,key 也计入(一个文件约占路径长度的三倍)。所以列表按窗口显示(`claude/hooks/layout/window.ts`,预算在 `constants.ts`),diff 限 3 万字符,详情最多列 50 个文件、说明最多 4000 字符。每行新增内容要计入窗口的开销估计;`claude/hooks/ui/budget.test.ts` 用最坏情况检查 Load more 还在。
 - **`Select` 最多 64 个选项**,超出时引擎拒绝画整个面板。分支下拉按 `branchOptions` 截断。
 - **桌面端渲染**:`Button` 把子元素压成纯文本、丢样式,要样式的画在按钮外;带边框的 `Box` 上下各占一行,要和按钮等高就用 SVG;`Svg` 不要设 `isInteractive`(沙盒框每次重画都重载,滚动时闪);没有 tooltip;面板宽度由应用管理,`$.ui.open` 的 `columns` 只是请求,列按 `bodyColumns` 自适应。
-- **`hooks/register.tsx` 里的 `$`** 不能跨 import,控制器拿到的是 `engineOf($)` 转发的对象,新增调用要写进去且**参数完整转发**(丢参数会让超时之类悄悄失效)。状态引用的 `plugin`、`key` 必须是字面量。`ui.render` 里只读状态不写。不要在渲染钩子里用 `$.clock.now()`,测试环境没有,整个钩子会被跳过。
+- **`claude/hooks/register.tsx` 里的 `$`** 不能跨 import,控制器拿到的是 `engineOf($)` 转发的对象,新增调用要写进去且**参数完整转发**(丢参数会让超时之类悄悄失效)。状态引用的 `plugin`、`key` 必须是字面量。`ui.render` 里只读状态不写。不要在渲染钩子里用 `$.clock.now()`,测试环境没有,整个钩子会被跳过。
 - 写进 SVG 的文本要 XML 转义。
 
 ## 测试
 
-叶子元素(`Svg`)查不到 `key`,按 `alt` 找。同一个 `Pane` 的状态跨挂载保留,下一次挂载前先收起上一次展开的状态。`expect` 没有 `toBeCloseTo`。git 输出用 `hooks/testing/fixtures.ts` 的 `serveGit` 模拟。
+叶子元素(`Svg`)查不到 `key`,按 `alt` 找。同一个 `Pane` 的状态跨挂载保留,下一次挂载前先收起上一次展开的状态。`expect` 没有 `toBeCloseTo`。git 输出用 `claude/hooks/testing/fixtures.ts` 的 `serveGit` 模拟。
 
 ## Codex 图谱入口
 
@@ -39,7 +39,7 @@ Wukong Git Graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面
 
 ## 发版
 
-版本号遵循 SemVer,`.claude-plugin/plugin.json` 和 `.claude-plugin/marketplace.json` 的 `version` 必须一致。使用者靠版本号变化收到更新,发布过的版本号不能复用。
+版本号遵循 SemVer,`claude/.claude-plugin/plugin.json` 和 `.claude-plugin/marketplace.json` 的 `version` 必须一致。使用者靠版本号变化收到更新,发布过的版本号不能复用。
 
 1. 从 `main` 切 `release/vX.Y.Z`,改两处 `version`,在 [CHANGELOG.md](CHANGELOG.md) 顶部加这一版(按 Added / Changed / Fixed 分组,注明 PR 编号),README、PRD 有变化的一并改。
 2. 开 PR,CI 通过、用户同意后合并。

@@ -101,6 +101,6 @@ npm --prefix codex run open -- --repo "/absolute/path/to/repository"
 
 - 需求说明：[PRD.md](PRD.md)
 - 技术设计和计划：[docs/wukong-code](docs/wukong-code)
-- Claude Code 检查：`claude plugin validate .`、`claude plugin test .`、`npx -y -p typescript@5.6.3 tsc -p ci`
+- Claude Code 检查：`claude plugin validate .`、`claude plugin validate claude`、`claude plugin test claude`、`npx -y -p typescript@5.6.3 tsc -p claude/ci`
 - Codex 检查：`npm --prefix codex test`、`npm --prefix codex run typecheck`
 - 发版流程：[AGENTS.md](AGENTS.md) 的「发版」一节

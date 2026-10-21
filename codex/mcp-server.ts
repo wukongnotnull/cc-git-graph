@@ -8,7 +8,7 @@ import {
   type CallToolResult, type Tool,
 } from '@modelcontextprotocol/sdk/types.js'
 import { readBranches, readDetail, readDiff, readGit, readPage } from './repository'
-import { isCommitHash } from '../hooks/git/argv'
+import { isCommitHash } from '../claude/hooks/git/argv'
 
 const PANEL_URI = 'ui://wukong-git-graph/panel-v1.html'
 const PANEL_MIME = 'text/html;profile=mcp-app'

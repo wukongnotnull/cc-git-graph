@@ -7,8 +7,8 @@ import { execFileSync } from 'node:child_process'
 import { get } from 'node:http'
 import { startGraphServer } from './server'
 import type { Branches, Page } from './protocol'
-import type { CommitDetail } from '../types'
-import type { FileDiffText } from '../hooks/git/parse-diff'
+import type { CommitDetail } from '../claude/types'
+import type { FileDiffText } from '../claude/hooks/git/parse-diff'
 import { readDetail, readDiff, readGit, readPage } from './repository'
 
 test('serves real repository history, paging, branch filters, details and literal file diffs', async t => {

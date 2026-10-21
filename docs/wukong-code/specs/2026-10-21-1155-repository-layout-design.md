@@ -1,6 +1,6 @@
 # 仓库目录结构调整设计
 
-Status: Draft（待评审）  
+Status: Approved
 Date: 2026-10-21  
 Source: brainstorming  
 Issue: [#60](https://github.com/wukongnotnull/wukong-git-graph/issues/60)
@@ -10,6 +10,8 @@ Issue: [#60](https://github.com/wukongnotnull/wukong-git-graph/issues/60)
 让仓库根目录清楚地区分仓库级资料与两种客户端插件实现。Claude 与 Codex 插件分别放入 `claude/` 和 `codex/`，普通使用者可以从根目录的 README 开始；维护者可以在对应子目录中找到产品实现与专属构建配置。
 
 调整只改变文件位置和引用路径，不改变插件功能、安装标识、发布版本或用户安装入口。
+
+现有 Codex 插件会直接复用 Claude hooks 中的 Git 解析、布局、格式化和类型模块。本次保留这份共享源码，模块仍由 `claude/` 管理；Codex 的相对导入随之改为引用 `../claude/hooks/` 和 `../claude/types/`，不复制或重写算法。
 
 ## 方案选择
 
@@ -58,7 +60,7 @@ Issue: [#60](https://github.com/wukongnotnull/wukong-git-graph/issues/60)
 3. 更新 `.gitignore` 中随插件移动的生成类型目录路径。Codex 构建产物仍忽略在 `codex/dist/`。
 4. 更新 CI 的 Claude 校验、测试和类型检查路径；Codex 构建与测试命令继续从根目录通过 `npm --prefix codex` 执行。
 5. 更新 README、PRD、AGENTS.md 和源码中的路径引用。用户从仓库安装 Claude 插件的命令保持不变；维护者执行插件专属命令时指定 `claude/`。
-6. 更新 Codex 包检查及其他自动化中对 Claude manifest 或 Claude 工程文件的路径断言。
+6. 更新 Codex 内部对共享 hooks/types 模块的导入路径(`../hooks/` → `../claude/hooks/`, `../types` → `../claude/types`)、包检查及其他自动化中对 Claude manifest 或 Claude 工程文件的路径断言。
 
 Git 应保留文件历史可追踪性；不改源码内容，除非路径变更要求同步调整相对路径。
 
