@@ -59,6 +59,13 @@ async function read<T>(client: Client, graphId: string, operation: string, args:
   assert.notEqual(result.isError, true, JSON.stringify(result.content))
   return result.structuredContent!.data as T
 }
+async function needsRepository(client: Client, pattern: RegExp) {
+  const result = await invoke(client, 'open_git_graph')
+  assert.notEqual(result.isError, true)
+  assert.equal(result.structuredContent?.needsRepository, true)
+  assert.equal(result.structuredContent?.graphId, undefined)
+  assert.match(String(result.structuredContent?.message), pattern)
+}
 async function fails(client: Client, name: string, args: Record<string, unknown>, pattern: RegExp) {
   const result = await invoke(client, name, args)
   assert.equal(result.isError, true, JSON.stringify(result))
@@ -163,15 +170,15 @@ test('MCP resolves one client root and rejects ambiguous roots and missing packa
   const fromRoot = await connect(t, {}, [join(a.directory, 'sub')])
   assert.equal((await open(fromRoot)).repository, await realpath(a.directory))
   const packageRoot = await connect(t, {}, [__dirname])
-  await fails(packageRoot, 'open_git_graph', {}, /plugin package/)
+  await needsRepository(packageRoot, /plugin package/)
   assert.equal((await open(packageRoot, {repository: a.directory})).repository, await realpath(a.directory))
   const ambiguous = await connect(t, {}, [a.directory, b.directory])
-  await fails(ambiguous, 'open_git_graph', {}, /multiple.*roots|more than one.*root/i)
+  await needsRepository(ambiguous, /multiple.*roots|more than one.*root/i)
   assert.equal((await open(ambiguous, {repository: a.directory})).repository, await realpath(a.directory))
   const noRoots = await connect(t, {}, [])
-  await fails(noRoots, 'open_git_graph', {}, /repository.*explicit|specify.*repository/i)
+  await needsRepository(noRoots, /repository.*explicit|specify.*repository/i)
   const noDefault = await connect(t)
-  await fails(noDefault, 'open_git_graph', {}, /repository.*explicit|specify.*repository/i)
+  await needsRepository(noDefault, /repository.*explicit|specify.*repository/i)
   const saved = process.cwd()
   try {
     process.chdir(join(a.directory, 'sub'))
@@ -228,8 +235,20 @@ test('MCP stdio bundle is relocatable, uses an external working directory and re
     await client.connect(transport)
     try {
       if (cwd === directory) assert.equal((await open(client)).repository, await realpath(directory))
-      else await fails(client, 'open_git_graph', {}, /plugin package/)
+      else await needsRepository(client, /plugin package/)
       assert.equal(stderr, '')
     } finally { await client.close() }
   }
+})
+
+
+test('menu without a usable project returns a renderable repository prompt and accepts an explicit retry', async t => {
+  const {directory} = await repository(t)
+  const client = await connect(t, {}, [__dirname])
+  const result = await invoke(client, 'open_git_graph')
+  assert.notEqual(result.isError, true, 'missing implicit target must not trigger the host failure page')
+  assert.equal(result.structuredContent?.needsRepository, true)
+  assert.match(String(result.structuredContent?.message), /plugin package/)
+  assert.equal(result.structuredContent?.graphId, undefined)
+  assert.equal((await open(client, {repository: directory})).repository, await realpath(directory))
 })
