@@ -11,24 +11,29 @@
 - 点击提交的描述区,展开详情:哈希、父提交、作者、提交者、日期、完整说明和改动文件(`+n | -n`)。文件最多列 50 个,说明最多显示 4000 字符,超出时有提示。
 - 只读:只执行 `git log`、`git show`、`git for-each-ref`、`git rev-parse`。
 
-## 在 Codex 中打开
+## 在 Codex 中安装与打开
 
-需要本机安装 Git、Node.js 22+ 和 npm,并克隆本仓库。Codex 插件与下方 Claude Code mod 分开安装。
+Codex 插件与下方 Claude Code mod 分开安装。需要安装 Git、Node.js 22+、npm 和 Codex CLI。若尚未克隆本仓库,先在本地终端执行:
 
-### 本地源码构建与安装
+```bash
+git clone https://github.com/wukongnotnull/cc-git-graph.git
+cd cc-git-graph
+```
 
-当前采用**本地源码构建后安装**的方式。在仓库根目录执行:
+### 安装插件
+
+在仓库根目录运行以下命令,先构建插件包,再注册本地市场并安装:
 
 ```bash
 npm --prefix codex ci
 npm --prefix codex run build
-codex plugin marketplace add "/absolute/path/to/cc-git-graph"
+codex plugin marketplace add "$(pwd)"
 codex plugin add cc-git-graph@cc-git-graph-local
 ```
 
-将第三行替换为本仓库的绝对路径。构建生成自包含的 `codex/dist/plugin`:包含可搬移的 MCP 服务、内嵌脚本/样式的面板、技能和两套兼容清单,无需从安装缓存访问源码或 `node_modules`。根目录 `.agents/plugins/marketplace.json` 指向该产物。**必须先运行 ci 和 build,再注册本地市场并安装**;不支持直接从未构建的 Git marketplace 安装。`dist` 不提交到 Git。
+构建生成自包含的 `codex/dist/plugin`:包含可搬移的 MCP 服务、内嵌脚本/样式的面板、技能和两套兼容清单,无需从安装缓存访问源码或 `node_modules`。根目录 `.agents/plugins/marketplace.json` 指向该产物。**必须先运行 `ci` 和 `build`,再注册本地市场并安装**;不支持直接从未构建的 Git marketplace 安装。`dist` 不提交到 Git。
 
-安装或更新后,请**新开本地项目聊天**再使用。旧聊天可能保留旧工具绑定并报 unknown MCP server;这时新开聊天加载已启用的插件。更新源码后重新构建,并通过 Codex 插件管理重新安装/加载新的构建产物,不会因修改源码自动刷新已安装的副本。
+安装后,在 Codex 插件管理中确认 **Git Graph** 已启用,然后**新开一个本地项目聊天**。旧聊天可能保留旧工具绑定并报 unknown MCP server。更新源码后重新构建,并通过 Codex 插件管理重新安装/加载新的构建产物,不会因修改源码自动刷新已安装的副本。
 
 插件已包含 `git-graph` 技能。若过去手动创建过 `~/.codex/skills/git-graph` 链接,先检查它是否确为本仓库的旧链接,再仅移除该链接以避免重复发现;保留已有用户技能内容,不要覆盖目录。
 
