@@ -1,6 +1,6 @@
-import type { CommitDetail } from '../types'
-import { PAGE_SIZE } from '../hooks/constants'
-import type { FileDiffText } from '../hooks/git/parse-diff'
+import type { CommitDetail } from '../claude/types'
+import { PAGE_SIZE } from '../claude/hooks/constants'
+import type { FileDiffText } from '../claude/hooks/git/parse-diff'
 import type { Branches, GraphState, Page } from './protocol'
 import { renderGraph } from './render'
 

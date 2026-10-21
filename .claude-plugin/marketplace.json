@@ -7,7 +7,7 @@
       "name": "wukong-git-graph",
       "description": "Wukong Git Graph: read-only Git history for Claude Code Desktop",
       "version": "0.3.0",
-      "source": "./"
+      "source": "./claude"
     }
   ]
 }

@@ -212,8 +212,8 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 | 性能 | 分页加载以保证首屏速度;每页读取量需保证 `$.process.run` 不被截断、也不卡住(实测 300 条一页会不返回,取 50 条);每次 git 调用 10 秒超时;面板内容总量不超过引擎上限(窗口显示)。没有定量的耗时指标 |
 | 兼容性 | 仅支持 desktop surface(该 surface 提供 `Svg`、`Input`、`Select`、`Code`);其他 surface 只显示提示 |
 | 可访问性 | 泳道配色对红绿色盲友好(不出现红绿对,同时靠亮度区分);当前分支、标签的徽章有 ●、◆ 标记,不只靠颜色;徽章文字按底色亮度选白色或近黑色 |
-| 可维护性 | 仓库根目录即 mod,结构为 `.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json`、`hooks/`、`types/` |
-| 质量保障 | `claude plugin validate` 和 `claude plugin test` 在 CI 上对每个 PR 运行并要求通过(CI 锁定 Claude Code 版本,升级时单独改);`tsc` 用提交进仓库的引擎声明快照(`ci/types/`)在 CI 上运行;git 输出解析、泳道布局、窗口、徽章分组、列规划、控制器和面板渲染都有单元测试 |
+| 可维护性 | 根目录是仓库；Claude 插件位于 `claude/`(`claude/.claude-plugin/plugin.json`、`claude/hooks/`、`claude/types/`),Codex 插件位于 `codex/`;根 `.claude-plugin/marketplace.json` 指向 Claude 插件 |
+| 质量保障 | `claude plugin validate .` 校验根 marketplace,`claude plugin validate claude` 和 `claude plugin test claude` 校验 Claude 插件,CI 对每个 PR 运行并要求通过(CI 锁定 Claude Code 版本,升级时单独改);`tsc` 用提交进仓库的引擎声明快照(`claude/ci/types/`)在 CI 上运行;git 输出解析、泳道布局、窗口、徽章分组、列规划、控制器和面板渲染都有单元测试 |
 
 ---
 
@@ -222,7 +222,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 - **实现形态**:Claude Code mod。用 `$.ui.open` 打开 Pane,用 `ui.render` 钩子绘制,用 `$.command.register` 加 `command.run` 钩子实现 `/git-graph`。
 - **数据读取**:`$.process.run` 执行 git 读取命令;输出有长度上限,会返回 `isStdoutTruncated`,实现时必须处理。
 - **绘制**:desktop surface 有 `Svg`、`Input`、`Select`、`Code`,分别用于泳道图和徽章、筛选控件、文件 diff。
-- **交付与安装**:仓库根目录就是 mod,市场清单在 `.claude-plugin/marketplace.json`。插件和市场 ID 为 `wukong-git-graph`。安装要在**终端**里运行(桌面应用的会话里没有 `/plugin install`):`/plugin install wukong-git-graph --marketplace wukongnotnull/wukong-git-graph`,或 `claude plugin marketplace add wukongnotnull/wukong-git-graph` 加 `claude plugin install wukong-git-graph@wukong-git-graph`;装在 user scope 后桌面应用里新开的本地会话都会加载。更新要同时提升 `plugin.json` 和 `marketplace.json` 的 `version`,再 `claude plugin update wukong-git-graph`。
+- **交付与安装**:仓库根目录提供 README 和 marketplace 清单,Claude 插件实现位于 `claude/`,Codex 插件实现位于 `codex/`;Claude 市场清单在 `.claude-plugin/marketplace.json`。插件和市场 ID 为 `wukong-git-graph`。安装要在**终端**里运行(桌面应用的会话里没有 `/plugin install`):`/plugin install wukong-git-graph --marketplace wukongnotnull/wukong-git-graph`,或 `claude plugin marketplace add wukongnotnull/wukong-git-graph` 加 `claude plugin install wukong-git-graph@wukong-git-graph`;装在 user scope 后桌面应用里新开的本地会话都会加载。更新要同时提升 `claude/.claude-plugin/plugin.json` 和 `.claude-plugin/marketplace.json` 的 `version`,再 `claude plugin update wukong-git-graph`。
 - **面板内容上限**:引擎对一个面板的内容总量有约 20 万字符的上限,所以列表按窗口显示,diff 限制 3 万字符(见 FR-5、FR-7)。
 - **按钮里的样式**:`Button` 会把子元素压成纯文本,徽章因此画在按钮外面,只有描述文字在按钮里。
 - **SVG 的悬停提示**:`isInteractive` 的 SVG 在沙盒框里,面板每次重画(包括滚动)都会重新加载而闪烁,所以不用;被截断的完整名称放在详情的 Refs 行里。
@@ -241,7 +241,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 7. 在非 git 目录和非 desktop surface 下,给出清晰提示;git 失败或超时时显示原因,不停在加载中。
 8. 面板宽度变化时列按规则出现或隐藏,所有行和表头对齐;默认宽度下只显示图和描述。
 9. 按钮条显示 Session、Week、Context 圆环和 Cost,随对话和窗口变化更新,没有数据时不显示(FR-9)。
-10. `claude plugin validate` 和 `claude plugin test` 通过(CI);输出解析、泳道布局、窗口、用量等有单元测试。
+10. `claude plugin validate .`、`claude plugin validate claude` 和 `claude plugin test claude` 通过(CI);输出解析、泳道布局、窗口、用量等有单元测试。
 
 ---
 
@@ -308,7 +308,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 | 9 | 搜索 | v1 不含 |
 | 10 | 提交点击 | 点击展开详情区(由「不可点击」修订而来) |
 | 11 | 详情区文件列表 | 包含,平铺,带 `+n \| -n` |
-| 12 | mod 交付形式 | 仓库根目录即 mod |
+| 12 | mod 交付形式 | Claude mod 位于 `claude/`,Codex 插件位于 `codex/` |
 | 13 | 需求记录位置 | 仓库根目录 `PRD.md` |
 | 14 | 第二个打开入口 | 输入框上方的「Wukong Git Graph」按钮(左侧边栏和右上角菜单不可行),旁边显示当前分支 |
 | 15 | 列表很长时的显示方式 | 窗口显示:一次画一批行,「Load more」换窗口,「↑ Newer commits」换回 |
