@@ -56,8 +56,6 @@ claude plugin install wukong-git-graph@wukong-git-graph
 
 安装完成后，在 Claude Code 桌面应用中新开一个本地项目会话，输入 `/git-graph`，或点输入框上方的 **Wukong Git Graph** 按钮。
 
-如果之前安装过旧版 **cc-git-graph**，请先在 Codex 或 Claude Code 的插件管理中移除旧插件，再按上面的新名称安装。两个应用中的旧插件 ID 都已更名。
-
 更新 Claude Code 插件时，在终端运行：
 
 ```bash
@@ -69,38 +67,3 @@ claude plugin update wukong-git-graph
 图谱会显示提交、分支和提交时间。可以选择分支、显示或隐藏远程分支、刷新历史，也可以展开提交查看文件改动。历史较长时，可用 **Load more** 查看更早的提交，再用 **Newer commits** 返回较新的提交。
 
 工具只读取 Git 历史，不会执行提交、切换分支或改动文件，也不会上传项目内容。
-
-## 开发者信息
-
-以下内容供维护项目或从源码安装的用户参考；普通使用者可以跳过。
-
-### 从已有源码安装或更新 Codex 插件
-
-在本仓库根目录运行：
-
-```bash
-npm --prefix codex ci
-npm --prefix codex run build
-codex plugin marketplace add "$PWD"
-codex plugin add wukong-git-graph@wukong-git-graph-local
-```
-
-构建步骤必须在添加本地市场和安装插件之前完成。更新源码后需要重新构建，并在 Codex 插件管理中重新安装或加载；已打开的旧聊天不会自动更新插件。
-
-### 浏览器备用方式
-
-通常请使用上面的 Codex 对话面板。只有明确需要网页时，才在源码仓库构建后运行：
-
-```bash
-npm --prefix codex run open -- --repo "/absolute/path/to/repository"
-```
-
-按终端提示在浏览器中打开地址。地址中含访问凭证，不要分享。启动服务的终端需要保持打开，按 `Ctrl+C` 停止服务。若 Codex 顶部显示 **Wukong Git Graph** Action，它也会启动这个网页备用方式；该按钮是否显示和能否点击尚未验证。
-
-### 检查与项目资料
-
-- 需求说明：[PRD.md](PRD.md)
-- 技术设计和计划：[docs/wukong-code](docs/wukong-code)
-- Claude Code 检查：`claude plugin validate .`、`claude plugin validate claude`、`claude plugin test claude`、`npx -y -p typescript@5.6.3 tsc -p claude/ci`
-- Codex 检查：`npm --prefix codex test`、`npm --prefix codex run typecheck`
-- 发版流程：[AGENTS.md](AGENTS.md) 的「发版」一节
