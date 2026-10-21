@@ -19,3 +19,35 @@
 - **Claude Code**：输入 `/git-graph`，或点击 **Wukong Git Graph** 按钮。
 
 面板显示当前项目的提交、分支和文件改动。
+
+## 手动安装
+
+### Codex
+
+需要 Codex 桌面应用、Git、Node.js 22 或更高版本，以及 Codex CLI（终端里的 `codex` 命令）。在电脑终端中运行：
+
+```bash
+git clone https://github.com/wukongnotnull/wukong-git-graph.git
+cd wukong-git-graph
+npm --prefix codex ci
+npm --prefix codex run build
+codex plugin marketplace add "$PWD"
+codex plugin add wukong-git-graph@wukong-git-graph-local
+```
+
+在 Codex 插件管理中启用 **Wukong Git Graph**，然后新开一个本地项目聊天。旧聊天可能还没有加载新插件。
+
+### Claude Code
+
+在电脑终端中运行：
+
+```bash
+claude plugin marketplace add wukongnotnull/wukong-git-graph
+claude plugin install wukong-git-graph@wukong-git-graph
+```
+
+在 Claude Code 插件管理中启用插件，然后新开一个本地项目会话。更新插件时运行：
+
+```bash
+claude plugin update wukong-git-graph
+```
