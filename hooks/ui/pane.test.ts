@@ -31,7 +31,7 @@ const RUN = {
 }
 
 const PROPS = {
-  title: 'Git Graph',
+  title: 'Wukong Git Graph',
   isFocused: true,
   bodyColumns: 120,
   placement: 'dock' as const,
@@ -308,7 +308,7 @@ describe('Pane states', () => {
 describe('state key', () => {
   test('the controller atom and the plugin name agree with what the Pane reads', async () => {
     expect(viewAtom.ref).toEqual({ plugin: PLUGIN, key: 'view' })
-    expect(PLUGIN).toBe('cc-git-graph')
+    expect(PLUGIN).toBe('wukong-git-graph')
   })
 })
 

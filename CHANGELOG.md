@@ -1,6 +1,6 @@
 # Changelog
 
-本文件记录每个发布版本的变化,格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。tag 名为 `cc-git-graph--v<版本>`。
+本文件记录每个发布版本的变化,格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/),版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。新 tag 名为 `wukong-git-graph--v<版本>`;历史 tag 沿用旧前缀。
 
 ## [Unreleased]
 
@@ -19,6 +19,13 @@
 
 - 分支(含远程)超过 63 个的仓库,打开面板是空白:引擎的下拉最多 64 个选项,超出就拒绝画整个面板。现在下拉最多列 62 个分支,末尾提示还有几个(#49)。
 - 展开改动文件很多或说明很长的提交时,超出面板内容上限,列表尾部和「Load more」消失。详情现在最多列 50 个文件、说明最多显示 4000 字符,超出时有提示(#49)。
+
+## [0.3.0] - 计划发布
+
+### Changed
+
+- 产品显示名统一为 **Wukong Git Graph**,GitHub 仓库和 Claude/Codex 插件 ID 统一为 `wukong-git-graph`;Claude 插件版本升至 0.3.0,Codex 插件版本升至 0.2.0(#56)。
+- 更新 Codex 与 Claude 的安装、启用和更新说明;已安装旧 ID 的用户需按新 ID 重新安装(#56)。
 
 ## [0.2.0] - 2026-10-14
 

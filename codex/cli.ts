@@ -7,7 +7,7 @@ if (args.length !== 2 || args[0] !== '--repo') {
   process.exitCode = 1
 } else {
   startGraphServer(resolve(args[1]!)).then(service => {
-    console.log(`Git Graph · ${resolve(args[1]!)}\n${service.url}\nRead-only local service. Press Ctrl+C to stop.`)
+    console.log(`Wukong Git Graph · ${resolve(args[1]!)}\n${service.url}\nRead-only local service. Press Ctrl+C to stop.`)
     const stop = () => { void service.close().catch(() => { process.exitCode = 1 }) }
     process.once('SIGINT', stop)
     process.once('SIGTERM', stop)

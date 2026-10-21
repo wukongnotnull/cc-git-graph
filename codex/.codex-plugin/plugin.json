@@ -1,14 +1,14 @@
 {
-  "name": "cc-git-graph",
-  "version": "0.1.0",
-  "description": "Read-only Git graph panel for Codex Desktop",
+  "name": "wukong-git-graph",
+  "version": "0.2.0",
+  "description": "Wukong Git Graph: read-only Git history for Codex Desktop",
   "author": {
     "name": "wukongnotnull"
   },
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "Git Graph",
+    "displayName": "Wukong Git Graph",
     "shortDescription": "Read-only local Git history",
     "longDescription": "Open a local repository Git graph in a conversation panel, with branches, commit details and file diffs.",
     "developerName": "wukongnotnull",

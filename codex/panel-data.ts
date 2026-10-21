@@ -19,7 +19,7 @@ export function graphApi(graphId: string, call: (name: string, args: Record<stri
     if (operation === 'detail' || operation === 'diff') args.hash = query.hash
     if (operation === 'diff') args.path = query.path
     const response = await call('read_git_graph', args)
-    if (!object(response) || !object(response.structuredContent) || !valid(operation, response.structuredContent.data)) throw new Error('Invalid Git Graph response.')
+    if (!object(response) || !object(response.structuredContent) || !valid(operation, response.structuredContent.data)) throw new Error('Invalid Wukong Git Graph response.')
     return response.structuredContent.data as T
   }
 }

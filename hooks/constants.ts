@@ -1,4 +1,4 @@
-export const PLUGIN = 'cc-git-graph'
+export const PLUGIN = 'wukong-git-graph'
 export const PANE_ID = 'git-graph'
 // The width the docked pane asks for when it opens: about what every column needs. A request, not a grant: a width
 // the person has dragged the pane to, or kept from an earlier open, wins.

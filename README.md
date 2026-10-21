@@ -1,13 +1,13 @@
-# wukong-git-graph
+# Wukong Git Graph
 
-在 Codex 或 Claude Code 里查看项目的修改历史。Git Graph 会把保存下来的代码改动（Git 提交）和不同的开发线（分支）画成图，方便快速了解项目变化。它只供查看，不会修改代码或历史记录。
+在 Codex 或 Claude Code 里查看项目的修改历史。Wukong Git Graph 会把保存下来的代码改动（Git 提交）和不同的开发线（分支）画成图，方便快速了解项目变化。它只供查看，不会修改代码或历史记录。
 
 ## 能做什么
 
 - 用图形查看项目的提交历史和分支。
 - 按分支筛选，查看某次提交改了哪些文件和具体内容。
 - 在 Codex 里直接打开对话旁边的面板，不需要打开网页。
-- 在 Claude Code 桌面应用里打开 Git Graph 面板。
+- 在 Claude Code 桌面应用里打开 Wukong Git Graph 面板。
 
 ## 在 Codex 中安装
 
@@ -24,7 +24,7 @@ cd wukong-git-graph
 
 这会把安装所需的文件下载到电脑，并进入该文件夹。
 
-### 2. 安装 Git Graph
+### 2. 安装 Wukong Git Graph
 
 继续在同一个终端里，一次复制并运行下面几行：
 
@@ -32,16 +32,16 @@ cd wukong-git-graph
 npm --prefix codex ci
 npm --prefix codex run build
 codex plugin marketplace add "$PWD"
-codex plugin add cc-git-graph@cc-git-graph-local
+codex plugin add wukong-git-graph@wukong-git-graph-local
 ```
 
-这些命令会准备面板并把 Git Graph 添加到 Codex。安装完成后，在 Codex 的插件管理中确认 **Git Graph** 已启用，然后新开一个本地项目聊天。旧聊天可能还没有加载新插件。
+这些命令会准备面板并把 Wukong Git Graph 添加到 Codex。安装完成后，在 Codex 的插件管理中确认 **Wukong Git Graph** 已启用，然后新开一个本地项目聊天。旧聊天可能还没有加载新插件。
 
 如果终端提示找不到 `git`、`npm` 或 `codex` 命令，说明电脑还没有安装对应程序，或安装后需要重新打开终端。Codex CLI 的安装方法见上面的官方说明。
 
 ## 在 Codex 中打开面板
 
-在项目聊天中，点 **More tools → Plugins and MCPs → Git Graph**。也可以输入 `/git-graph`，再选择 **Git Graph**。面板显示的是当前聊天对应项目的提交历史。
+在项目聊天中，点 **More tools → Plugins and MCPs → Wukong Git Graph**。也可以输入 `/git-graph`，再选择 **Wukong Git Graph**。面板显示的是当前聊天对应项目的提交历史。
 
 面板打开失败时，先确认插件已启用，再新开一个本地项目聊天重试。成功打开后，图谱会留在对话旁边；正常情况下，技能不会额外发一条说明消息。
 
@@ -51,15 +51,17 @@ codex plugin add cc-git-graph@cc-git-graph-local
 
 ```bash
 claude plugin marketplace add wukongnotnull/wukong-git-graph
-claude plugin install cc-git-graph@cc-git-graph
+claude plugin install wukong-git-graph@wukong-git-graph
 ```
 
-安装完成后，在 Claude Code 桌面应用中新开一个本地项目会话，输入 `/git-graph`，或点输入框上方的 **Git Graph** 按钮。
+安装完成后，在 Claude Code 桌面应用中新开一个本地项目会话，输入 `/git-graph`，或点输入框上方的 **Wukong Git Graph** 按钮。
+
+如果之前安装过旧版 **cc-git-graph**，请先在 Codex 或 Claude Code 的插件管理中移除旧插件，再按上面的新名称安装。两个应用中的旧插件 ID 都已更名。
 
 更新 Claude Code 插件时，在终端运行：
 
 ```bash
-claude plugin update cc-git-graph
+claude plugin update wukong-git-graph
 ```
 
 ## 使用说明
@@ -80,7 +82,7 @@ claude plugin update cc-git-graph
 npm --prefix codex ci
 npm --prefix codex run build
 codex plugin marketplace add "$PWD"
-codex plugin add cc-git-graph@cc-git-graph-local
+codex plugin add wukong-git-graph@wukong-git-graph-local
 ```
 
 构建步骤必须在添加本地市场和安装插件之前完成。更新源码后需要重新构建，并在 Codex 插件管理中重新安装或加载；已打开的旧聊天不会自动更新插件。

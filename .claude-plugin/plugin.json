@@ -1,7 +1,7 @@
 {
-  "name": "cc-git-graph",
-  "version": "0.2.0",
-  "description": "Read-only Git graph board for Claude Code Desktop",
+  "name": "wukong-git-graph",
+  "version": "0.3.0",
+  "description": "Wukong Git Graph: read-only Git history for Claude Code Desktop",
   "author": {
     "name": "wukongnotnull"
   },

@@ -17,7 +17,7 @@ import { initialView } from './state'
 
 // The hooks loader reads state references only when their plugin and key are string literals
 // written in the same file as the read or update, so the atom is declared here, not imported.
-export const viewAtom = atom({ plugin: 'cc-git-graph', key: 'view' } as const, initialView)
+export const viewAtom = atom({ plugin: 'wukong-git-graph', key: 'view' } as const, initialView)
 
 type Page = { commits: Commit[]; hasMore: boolean }
 type PageResult = { ok: true; page: Page } | GitFailure
