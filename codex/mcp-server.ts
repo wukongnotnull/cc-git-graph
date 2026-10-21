@@ -78,12 +78,14 @@ export function createGraphMcpServer(options: Options = {}): Server {
       target = fileURLToPath(root)
     } else {
       target = await realpath(process.cwd())
-      const packageDirectory = await realpath(__dirname)
-      // Development bundles live under codex/dist; the installed bundle lives directly at its package root.
-      const developmentDirectory = basename(packageDirectory) === 'dist' ? dirname(packageDirectory) : packageDirectory
-      if (within(target, developmentDirectory)) throw new Error('Specify repository explicitly; the plugin package is not a project target.')
     }
     const directory = await realpath(target)
+    if (args.repository === undefined && options.defaultRepository === undefined) {
+      const packageDirectory = await realpath(__dirname)
+      // Development bundles live under codex/dist; installed bundles live at their package root.
+      const developmentDirectory = basename(packageDirectory) === 'dist' ? dirname(packageDirectory) : packageDirectory
+      if (within(directory, developmentDirectory)) throw new Error('Specify repository explicitly; the plugin package is not a project target.')
+    }
     const top = (await readGit(directory, ['rev-parse', '--show-toplevel'])).replace(/\n$/, '')
     return realpath(top)
   }
