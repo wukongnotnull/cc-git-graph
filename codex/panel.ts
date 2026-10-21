@@ -14,7 +14,7 @@ bridge.onToolResult = result => {
   if (!object(result)) return
   if (result.isError) {
     dispose(); generation++
-    app.innerHTML = '<p role="alert" class="error">Could not open the repository. Invoke Git Graph with an explicit local repository path.</p>'
+    app.innerHTML = '<p role="alert" class="error">Could not open the repository. Invoke Wukong Git Graph with an explicit local repository path.</p>'
     return
   }
   const identity = result.structuredContent
@@ -31,5 +31,5 @@ bridge.onToolResult = result => {
     return data
   }, target)
 }
-void bridge.connect().catch(error => { app.innerHTML = `<p role="alert" class="error">${escapeHtml(error instanceof Error ? error.message : 'Could not connect to Git Graph.')}</p>` })
+void bridge.connect().catch(error => { app.innerHTML = `<p role="alert" class="error">${escapeHtml(error instanceof Error ? error.message : 'Could not connect to Wukong Git Graph.')}</p>` })
 window.addEventListener('pagehide', () => { generation++; dispose(); void bridge.close() }, { once: true })

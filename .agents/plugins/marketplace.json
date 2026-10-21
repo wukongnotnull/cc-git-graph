@@ -1,8 +1,8 @@
 {
-  "name": "cc-git-graph-local",
+  "name": "wukong-git-graph-local",
   "plugins": [
     {
-      "name": "cc-git-graph",
+      "name": "wukong-git-graph",
       "source": {
         "source": "local",
         "path": "./codex/dist/plugin"

@@ -34,7 +34,7 @@ export function renderGraph(state: GraphState): string {
   const columns = columnCount(shown)
   const branches = state.branches.filter(branch => state.remote || !branch.remote)
   const disabled = state.busy ? ' disabled' : ''
-  return `<header class="top"><div><span class="eyebrow">LOCAL REPOSITORY</span><h1>Git Graph <span class="readonly">Read only</span></h1></div><span class="current">⑂ ${e(state.current || 'No current branch')}</span></header>
+  return `<header class="top"><div><span class="eyebrow">LOCAL REPOSITORY</span><h1>Wukong Git Graph <span class="readonly">Read only</span></h1></div><span class="current">⑂ ${e(state.current || 'No current branch')}</span></header>
     <div class="toolbar"><label>Branch <select id="branch"${disabled}><option value="">Show All</option>${branches.map(branch => `<option value="${e(branch.ref)}"${state.branch === branch.ref ? ' selected' : ''}>${e(branch.name)}${branch.remote ? ' (remote)' : ''}</option>`).join('')}</select></label>
       <label class="remote"><input id="remote" type="checkbox"${state.remote ? ' checked' : ''}${disabled}> Show Remote Branches</label><button data-action="refresh"${disabled}>↻ Refresh</button></div>
     <div role="status" aria-live="polite" class="status">${state.busy ? 'Loading…' : `${state.commits.length} commits loaded${state.hasMore ? ' · More history available' : ''}`}</div>

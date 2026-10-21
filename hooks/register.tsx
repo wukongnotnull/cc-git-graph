@@ -12,10 +12,10 @@ import { makeActions } from './ui/actions'
 import { renderBand } from './ui/band'
 import { renderPane } from './ui/pane'
 
-const OPENED_TEXT = 'Git Graph opened.'
-const VIEW_REF = { plugin: 'cc-git-graph', key: 'view' } as const
-const BRANCH_REF = { plugin: 'cc-git-graph', key: 'branch' } as const
-const USAGE_REF = { plugin: 'cc-git-graph', key: 'usage' } as const
+const OPENED_TEXT = 'Wukong Git Graph opened.'
+const VIEW_REF = { plugin: 'wukong-git-graph', key: 'view' } as const
+const BRANCH_REF = { plugin: 'wukong-git-graph', key: 'branch' } as const
+const USAGE_REF = { plugin: 'wukong-git-graph', key: 'usage' } as const
 
 // The hooks loader follows `$` only into functions declared in this file, never across an
 // import, and refuses `$` being spread or returned. It also wants every state reference
@@ -66,17 +66,17 @@ async function openBoard($: EngineInterface): Promise<string> {
   await refreshBranch($)
   await refreshUsage($)
 
-  const opened = await $.ui.open({ id: PANE_ID, title: 'Git Graph', columns: PANE_COLUMNS })
+  const opened = await $.ui.open({ id: PANE_ID, title: 'Wukong Git Graph', columns: PANE_COLUMNS })
 
   if (!opened.isPlaced) {
-    return 'Git Graph: this surface cannot show the panel.'
+    return 'Wukong Git Graph: this surface cannot show the panel.'
   }
 
   try {
     await openGraph(engineOf($))
   } catch (error) {
     // openGraph records load failures itself; this catches a failure of the state calls.
-    return `Git Graph: ${describeError(error)}`
+    return `Wukong Git Graph: ${describeError(error)}`
   }
 
   return OPENED_TEXT
@@ -133,7 +133,7 @@ export const register: Register = on => {
 
       return (
         <Box>
-          <Text dimColor>Git Graph works only in the desktop app.</Text>
+          <Text dimColor>Wukong Git Graph works only in the desktop app.</Text>
         </Box>
       )
     }

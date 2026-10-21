@@ -1,4 +1,4 @@
 interface:
-  display_name: "Git Graph"
+  display_name: "Wukong Git Graph"
   short_description: "Open a read-only Git graph panel"
-  default_prompt: "Use $git-graph to call the installed Git Graph MCP plugin for the current repository and verify its MCP Apps panel. Stay silent on success; reply only if opening or verification fails, unless higher-priority instructions require a response."
+  default_prompt: "Use $git-graph to call the installed Wukong Git Graph MCP plugin for the current repository and verify its MCP Apps panel. Stay silent on success; reply only if opening or verification fails, unless higher-priority instructions require a response."

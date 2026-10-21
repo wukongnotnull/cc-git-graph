@@ -1,6 +1,6 @@
 # AGENTS.md
 
-cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板。需求见 [PRD.md](PRD.md),安装和使用见 [README.md](README.md);改了行为要同步更新这两份。
+Wukong Git Graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板。需求见 [PRD.md](PRD.md),安装和使用见 [README.md](README.md);改了行为要同步更新这两份。
 
 ## 验证
 
@@ -23,15 +23,15 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 ## Codex 图谱入口
 
-默认使用正式插件内的 `codex/skills/git-graph` 技能,通过 `open_git_graph` 显式传入当前聊天仓库的绝对路径,再检查 MCP Apps 对话面板显示目标仓库的历史或有效空状态并保留。不是调用工具就算成功;错误仓库、UI 错误、未验证面板均为失败。默认成功不输出文字或截图,上层指令和用户要求报告时除外。More tools → Plugins and MCPs → Git Graph 来自 MCP thread entrypoint。工具缺失或 unknown MCP server 时确认插件启用并新开聊天,不要自动回退浏览器。
+默认使用正式插件内的 `codex/skills/git-graph` 技能,通过 `open_git_graph` 显式传入当前聊天仓库的绝对路径,再检查 MCP Apps 对话面板显示目标仓库的历史或有效空状态并保留。不是调用工具就算成功;错误仓库、UI 错误、未验证面板均为失败。默认成功不输出文字或截图,上层指令和用户要求报告时除外。More tools → Plugins and MCPs → Wukong Git Graph 来自 MCP thread entrypoint。工具缺失或 unknown MCP server 时确认插件启用并新开聊天,不要自动回退浏览器。
 
-本地源码分发必须先在源码仓库执行 `npm --prefix codex ci`、`npm --prefix codex run build`,产物为忽略的自包含 `codex/dist/plugin`;根 `.agents/plugins/marketplace.json` 指向它。然后 `codex plugin marketplace add <本仓库绝对路径>`、`codex plugin add cc-git-graph@cc-git-graph-local`。未构建的 Git marketplace 安装不支持。修改源码后重新构建并重新安装/加载,旧聊天不会自动刷新工具绑定。Codex 插件版本独立于 Claude 清单版本,不要因此更改 Claude 版本。
+本地源码分发必须先在源码仓库执行 `npm --prefix codex ci`、`npm --prefix codex run build`,产物为忽略的自包含 `codex/dist/plugin`;根 `.agents/plugins/marketplace.json` 指向它。然后 `codex plugin marketplace add <本仓库绝对路径>`、`codex plugin add wukong-git-graph@wukong-git-graph-local`。未构建的 Git marketplace 安装不支持。修改源码后重新构建并重新安装/加载,旧聊天不会自动刷新工具绑定。Codex 插件版本独立于 Claude 清单版本,不要因此更改 Claude 版本。
 
 不传路径时 MCP 依次采用客户端唯一文件系统 root、无 roots 能力时的进程工作目录;有多个/零个 root 或落在插件自身目录时要求显式目标,不能猜源码目录。子目录规范化到仓库根、worktree 独立;每个 graphId 固定仓库。stdio 进程由 Codex 管理,不启动 HTTP 守护进程。不得覆盖用户技能内容;检查旧 `~/.codex/skills/git-graph` 是本任务创建的链接后,仅移除该链接避免重复发现。
 
 仅用户明确要求浏览器回退时,独立定位包含 `codex/package.json` 的源码 checkout 及启动器,与目标仓库区分。在源码仓库构建后用持续运行终端执行 `npm --prefix codex run open -- --repo <目标绝对路径>`,验证/复用同仓库服务,用 Codex 浏览器侧边页打开完整 URL(含 fragment)并验证。首次启动终端保持运行,Ctrl+C 停止;不要把带令牌 URL 写进 issue、PR 或版本库。安装缓存内的插件不含 HTTP 启动器。Codex 适配测试:`npm --prefix codex test`、`npm --prefix codex run typecheck`;前者包含只复制插件包到空目录后的真实 stdio 启动测试。
 
-`.codex/environments/environment.toml` 的 Git Graph Action 保留为 HTTP 顶部启动入口,不自动打开侧边页。修改时保留其他 setup/actions 并实际执行命令;无法操作设置界面时,如实说明按钮显示与点击未验证。协议/构建通过不能当作桌面面板或菜单已验证。
+`.codex/environments/environment.toml` 的 Wukong Git Graph Action 保留为 HTTP 顶部启动入口,不自动打开侧边页。修改时保留其他 setup/actions 并实际执行命令;无法操作设置界面时,如实说明按钮显示与点击未验证。协议/构建通过不能当作桌面面板或菜单已验证。
 
 ## 分支流程
 
@@ -43,8 +43,8 @@ cc-git-graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面板�
 
 1. 从 `main` 切 `release/vX.Y.Z`,改两处 `version`,在 [CHANGELOG.md](CHANGELOG.md) 顶部加这一版(按 Added / Changed / Fixed 分组,注明 PR 编号),README、PRD 有变化的一并改。
 2. 开 PR,CI 通过、用户同意后合并。
-3. 在更新后的 `main` 上打 tag 并推送:`claude plugin tag . --push`(会先校验两处版本一致,tag 名 `cc-git-graph--vX.Y.Z`)。
-4. 建 Release:`gh release create cc-git-graph--vX.Y.Z --title vX.Y.Z --notes-file <这一版的 CHANGELOG 段落>`。
+3. 在更新后的 `main` 上打 tag 并推送:`claude plugin tag . --push`(会先校验两处版本一致,新 tag 名 `wukong-git-graph--vX.Y.Z`;历史 tag 保留旧前缀)。
+4. 建 Release:`gh release create wukong-git-graph--vX.Y.Z --title vX.Y.Z --notes-file <这一版的 CHANGELOG 段落>`。
 5. tag 和 Release 是公开的,第 3、4 步要用户明确同意后再做。
 
 ## 提问与回复同步到 Issue

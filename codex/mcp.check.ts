@@ -14,8 +14,8 @@ import type { Branches, Page } from './protocol'
 import type { CommitDetail } from '../types'
 import type { FileDiffText } from '../hooks/git/parse-diff'
 
-const uri = 'ui://cc-git-graph/panel-v1.html'
-const html = '<!doctype html><html><body>Git Graph<script>/* bundled */</script></body></html>'
+const uri = 'ui://wukong-git-graph/panel-v1.html'
+const html = '<!doctype html><html><body>Wukong Git Graph<script>/* bundled */</script></body></html>'
 type OpenGraph = Branches & Page & {graphId: string; repository: string}
 
 async function repository(t: TestContext, commits = 1) {
@@ -134,7 +134,7 @@ test('MCP tools and resource declare thread entrypoint, app visibility and self-
   assert.equal(resource.text, html)
   assert.deepEqual(resource._meta?.['openai/ui'], {preferredDisplayMode: 'fullscreen', availableDisplayModes: ['fullscreen']})
   assert.deepEqual(resource._meta?.ui, {prefersBorder: true, csp: {connectDomains: [], resourceDomains: []}})
-  await assert.rejects(client.readResource({uri: 'ui://cc-git-graph/missing'}), /Unknown.*resource/i)
+  await assert.rejects(client.readResource({uri: 'ui://wukong-git-graph/missing'}), /Unknown.*resource/i)
 })
 
 test('MCP canonicalizes subdirectories and worktrees and keeps independent handles fixed', async t => {

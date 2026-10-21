@@ -23,12 +23,12 @@ async function existingService(record: string, repository: string): Promise<Grap
     })
     if (!response.ok) return null
     const identity: unknown = await response.json()
-    return isObject(identity) && identity.application === 'cc-git-graph' && identity.protocol === 1 && identity.repository === repository
+    return isObject(identity) && identity.application === 'wukong-git-graph' && identity.protocol === 1 && identity.repository === repository
       ? reused(data.url) : null
   } catch { return null }
 }
 
-export async function ensureGraphService(directory: string, cacheDirectory = join(tmpdir(), `cc-git-graph-${process.getuid?.() ?? 'user'}`)): Promise<GraphService> {
+export async function ensureGraphService(directory: string, cacheDirectory = join(tmpdir(), `wukong-git-graph-${process.getuid?.() ?? 'user'}`)): Promise<GraphService> {
   const repository = await realpath((await readGit(directory, ['rev-parse', '--show-toplevel'])).replace(/\n$/, ''))
   await mkdir(cacheDirectory, { recursive: true, mode: 0o700 })
   await chmod(cacheDirectory, 0o700)
@@ -52,7 +52,7 @@ export async function ensureGraphService(directory: string, cacheDirectory = joi
       await delay(100)
     }
   }
-  if (!locked) throw new Error('Another Git Graph is starting. Try again shortly.')
+  if (!locked) throw new Error('Another Wukong Git Graph is starting. Try again shortly.')
   try {
     const started = await existingService(record, repository)
     if (started) return started

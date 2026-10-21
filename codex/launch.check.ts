@@ -24,7 +24,7 @@ test('reuses an authenticated service for the same repository, including subdire
   const response = await fetch(new URL('/api/identity', url), { headers: { Authorization: `Bearer ${url.hash.slice(1)}` } })
   assert.equal(response.status, 200)
   const identity = await response.json() as { application: string; repository: string }
-  assert.equal(identity.application, 'cc-git-graph')
+  assert.equal(identity.application, 'wukong-git-graph')
   assert.equal(identity.repository, await import('node:fs/promises').then(fs => fs.realpath(repo)))
   const record = (await readdir(cache)).find(name => name.endsWith('.json'))!
   assert.equal((await stat(join(cache, record))).mode & 0o077, 0)

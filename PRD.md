@@ -1,11 +1,11 @@
-# cc-git-graph 产品需求文档(PRD)
+# Wukong Git Graph 产品需求文档(PRD)
 
 ## 文档信息
 
 | 项目 | 内容 |
 |---|---|
-| 产品名称 | cc-git-graph(Claude Code Git 图谱看板 mod) |
-| 文档版本 | v1.9 |
+| 产品名称 | Wukong Git Graph(Claude Code 与 Codex 的只读 Git 图谱面板) |
+| 文档版本 | v1.10 |
 | 文档状态 | Confirmed(v1 已实现;v1.4 补充用量显示) |
 | 创建日期 | 2026-10-13 |
 | 产品负责人 | wukongnotnull |
@@ -26,6 +26,7 @@
 | v1.7 | 2026-10-20 | 增加 Codex 顶部 Git Graph 项目 Action,在集成终端安装、构建并启动图谱服务 |
 | v1.8 | 2026-10-20 | 增加 Codex Git Graph 用户技能,自动启动或复用当前仓库服务并打开浏览器侧边页 |
 | v1.9 | 2026-10-21 | Codex 默认改为正式 MCP 插件对话面板,增加 More tools 入口、本地源码构建安装与可搬移包,浏览器仅显式回退 |
+| v1.10 | 2026-10-21 | 产品显示名、Claude/Codex 插件 ID 和仓库统一改为 Wukong Git Graph / wukong-git-graph |
 
 ---
 
@@ -55,7 +56,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 
 ### 2.1 v1 范围内
 
-- 通过 `/git-graph` 斜杠命令或输入框上方的「Git Graph」按钮手动打开面板;按钮右边显示会话当前所在分支,再往右显示账号的用量窗口、上下文占用和会话花费。
+- 通过 `/git-graph` 斜杠命令或输入框上方的「Wukong Git Graph」按钮手动打开面板;按钮右边显示会话当前所在分支,再往右显示账号的用量窗口、上下文占用和会话花费。
 - 当前会话工作目录所在仓库的图谱:泳道、提交列表、分支/标签徽章。
 - 顶部筛选工具栏:分支下拉(单选)、「显示远程分支」开关、刷新按钮。
 - 分页加载提交历史,列表按窗口显示(引擎对面板内容的总量有上限)。
@@ -90,7 +91,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 | S4 | 看更早的历史 | 滚到列表底部 → 点击「Load more」→ 窗口还有空间时追加下一页,窗口满了就换到更旧的一批;顶部的「↑ Newer commits」换回来 |
 | S5 | Claude 刚提交后查看最新状态 | 点击刷新按钮 → 重新读取并更新图谱 |
 | S6 | 看某次提交里某个文件改了什么 | 展开提交详情 → 点文件名 → 卡片下方显示该文件的 diff;点「✕ Close diff」或再点一次文件名收起 |
-| S7 | 不记得命令时打开面板 | 点输入框上方的「Git Graph」按钮 |
+| S7 | 不记得命令时打开面板 | 点输入框上方的「Wukong Git Graph」按钮 |
 | S8 | 随时知道额度还剩多少 | 看输入框上方按钮条右侧的 Session、Week 圆环和百分比,以及上下文占用和会话花费,不用离开当前界面 |
 
 ---
@@ -102,7 +103,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 ### FR-1 打开面板(P0)
 
 - 注册斜杠命令 `/git-graph`;输入后用 `$.ui.open` 打开面板。
-- 在输入框上方提供「Git Graph」按钮(仅桌面应用,问卷占用该位置时不画),点击等同于输入命令。桌面应用的左侧边栏和右上角下拉菜单由应用自己管理,mod 没有往里加菜单项的入口。
+- 在输入框上方提供「Wukong Git Graph」按钮(仅桌面应用,问卷占用该位置时不画),点击等同于输入命令。桌面应用的左侧边栏和右上角下拉菜单由应用自己管理,mod 没有往里加菜单项的入口。
 - 按钮右边显示会话所在目录当前的分支名(最长 40 个字符;游离 HEAD 显示 `HEAD (detached)`;不在仓库内不显示)。样式是分支图标加暗淡的纯文字,**没有边框和底色**,避免被误认为可点击的按钮。分支在会话启动、每轮对话结束、打开面板时重新读取。
 - 不在会话启动时自动打开。
 - 打开时通过 `columns` 参数请求 100 列的默认宽度。这只是请求:用户拖过的宽度、应用保留的宽度优先,桌面应用是否采用未经验证。
@@ -169,13 +170,13 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 ### FR-8 异常与不支持场景(P0)
 
 - 当前目录不是 git 仓库:面板显示一句说明,不报错;输入框上方的按钮旁不显示分支。
-- 在非 desktop surface 下:面板提示「Git Graph works only in the desktop app.」。
+- 在非 desktop surface 下:面板提示「Wukong Git Graph works only in the desktop app.」。
 - git 命令失败、超时或无法启动(包括本机没有 git):面板显示「Could not read the Git history: 」加上失败原因。原因一般来自 git;git 无法启动(多半是没装)时提示「Could not start git. Is it installed?」,超时提示「git did not answer within 10 seconds.」。
 - **验收标准**:三种情况下都给出清晰提示,不停在加载中。
 
 ### FR-9 按钮条里的用量(P0)
 
-- 位置:输入框上方按钮条的右侧,与「Git Graph」按钮和当前分支同一行;宽度不够时换行。仅桌面应用,问卷占用该位置时不画。
+- 位置:输入框上方按钮条的右侧,与「Wukong Git Graph」按钮和当前分支同一行;宽度不够时换行。仅桌面应用,问卷占用该位置时不画。
 - 内容,每项一个圆环加名称和百分比:
   - **Session**:5 小时用量窗口已用百分比,后面是重置时间(`↻ 14:30`,不是当天则 `↻ Mon 06:00`);
   - **Week**:7 天用量窗口,同上;网关的 `spend_limit` 窗口显示为 `Spend`;
@@ -194,7 +195,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 
 - 整体布局参照截图:顶部为筛选工具栏,下方为泳道图加提交列表,点击提交行在该行下方展开详情区。
 - 详情区的字段和文件列表按面板宽度左右或上下排列(见 FR-7);文件的 diff 在卡片下方展开。
-- 输入框上方有「Git Graph」按钮、当前分支名(纯文字),右侧是用量圆环(见 FR-9)。
+- 输入框上方有「Wukong Git Graph」按钮、当前分支名(纯文字),右侧是用量圆环(见 FR-9)。
 - 参考截图:
   - 图谱列表:分支下拉、「Show Remote Branches」勾选框、泳道、徽章、五列提交列表。
   - 详情区:元信息(哈希、父提交、作者、提交者、日期、说明)加文件列表(`+n | -n`)。
@@ -221,7 +222,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 - **实现形态**:Claude Code mod。用 `$.ui.open` 打开 Pane,用 `ui.render` 钩子绘制,用 `$.command.register` 加 `command.run` 钩子实现 `/git-graph`。
 - **数据读取**:`$.process.run` 执行 git 读取命令;输出有长度上限,会返回 `isStdoutTruncated`,实现时必须处理。
 - **绘制**:desktop surface 有 `Svg`、`Input`、`Select`、`Code`,分别用于泳道图和徽章、筛选控件、文件 diff。
-- **交付与安装**:仓库根目录就是 mod,市场清单在 `.claude-plugin/marketplace.json`。安装要在**终端**里运行(桌面应用的会话里没有 `/plugin install`):`/plugin install cc-git-graph --marketplace wukongnotnull/cc-git-graph`,或 `claude plugin marketplace add wukongnotnull/cc-git-graph` 加 `claude plugin install cc-git-graph@cc-git-graph`;装在 user scope 后桌面应用里新开的本地会话都会加载。更新要同时提升 `plugin.json` 和 `marketplace.json` 的 `version`,再 `claude plugin update`。
+- **交付与安装**:仓库根目录就是 mod,市场清单在 `.claude-plugin/marketplace.json`。插件和市场 ID 为 `wukong-git-graph`。安装要在**终端**里运行(桌面应用的会话里没有 `/plugin install`):`/plugin install wukong-git-graph --marketplace wukongnotnull/wukong-git-graph`,或 `claude plugin marketplace add wukongnotnull/wukong-git-graph` 加 `claude plugin install wukong-git-graph@wukong-git-graph`;装在 user scope 后桌面应用里新开的本地会话都会加载。更新要同时提升 `plugin.json` 和 `marketplace.json` 的 `version`,再 `claude plugin update wukong-git-graph`。
 - **面板内容上限**:引擎对一个面板的内容总量有约 20 万字符的上限,所以列表按窗口显示,diff 限制 3 万字符(见 FR-5、FR-7)。
 - **按钮里的样式**:`Button` 会把子元素压成纯文本,徽章因此画在按钮外面,只有描述文字在按钮里。
 - **SVG 的悬停提示**:`isInteractive` 的 SVG 在沙盒框里,面板每次重画(包括滚动)都会重新加载而闪烁,所以不用;被截断的完整名称放在详情的 Refs 行里。
@@ -277,10 +278,10 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 
 ## 11. Codex 适配
 
-来源:用户在 Codex 中确认 [Issue #51](https://github.com/wukongnotnull/cc-git-graph/issues/51) 的方案。第 1–10 节的 mod API、按钮条和引擎限制针对 Claude Code;Codex 采用以下独立入口和运行方式。
+来源:用户在 Codex 中确认 [Issue #51](https://github.com/wukongnotnull/wukong-git-graph/issues/51) 的方案。第 1–10 节的 mod API、按钮条和引擎限制针对 Claude Code;Codex 采用以下独立入口和运行方式。
 
-- **安装与分发**:要求 Git、Node.js 22+ 与 npm。采用本地源码分发:先 `npm --prefix codex ci`、`npm --prefix codex run build`,构建生成忽略的自包含 `codex/dist/plugin`,包含 portable Agent Plugins `plugin.json`/`mcp.json`、Codex `.codex-plugin/plugin.json`/`.mcp.json`、MCP bundle、内嵌脚本样式的 HTML 与技能。根 `.agents/plugins/marketplace.json` 的 `cc-git-graph-local` 指向该包;用 `codex plugin marketplace add <源码仓库绝对路径>` 和 `codex plugin add cc-git-graph@cc-git-graph-local` 安装。安装缓存无需源码和 node_modules,支持只搬移完整包后启动;不支持未构建的 Git marketplace 安装。Codex 插件版本独立于 Claude 版本。更新后重新构建并重新安装/加载,保留用户已有技能内容,仅在确认是本任务旧链接后移除重复的用户技能链接。
-- **打开方式**:默认由正式插件提供 **More tools → Plugins and MCPs → Git Graph** thread entrypoint,以及 `/git-graph` 选择技能或 `$git-graph`。技能调用 `open_git_graph` 时必须显式传入当前聊天工作目录的绝对路径,用户也可指定另一个本地仓库/worktree;不能将技能源码或缓存目录当目标。随后检查 MCP Apps 对话面板的仓库和内容并保留。默认成功后不主动输出文字、URL 或截图;上层指令或用户要求报告时正常回答,工具活动提示由应用控制。有效空状态视为成功;错误仓库、UI 错误、仅调用工具或未验证面板均不算成功。安装/更新后新开本地项目聊天;旧聊天可能报 unknown MCP server,工具缺失时先确认插件启用并新开聊天,不自动回退网页。
+- **安装与分发**:要求 Git、Node.js 22+ 与 npm。采用本地源码分发:先 `npm --prefix codex ci`、`npm --prefix codex run build`,构建生成忽略的自包含 `codex/dist/plugin`,包含 portable Agent Plugins `plugin.json`/`mcp.json`、Codex `.codex-plugin/plugin.json`/`.mcp.json`、MCP bundle、内嵌脚本样式的 HTML 与技能。根 `.agents/plugins/marketplace.json` 的 `wukong-git-graph-local` 指向该包;用 `codex plugin marketplace add <源码仓库绝对路径>` 和 `codex plugin add wukong-git-graph@wukong-git-graph-local` 安装。安装缓存无需源码和 node_modules,支持只搬移完整包后启动;不支持未构建的 Git marketplace 安装。Codex 插件版本独立于 Claude 版本。更新后重新构建并重新安装/加载,保留用户已有技能内容,仅在确认是本任务旧链接后移除重复的用户技能链接。
+- **打开方式**:默认由正式插件提供 **More tools → Plugins and MCPs → Wukong Git Graph** thread entrypoint,以及 `/git-graph` 选择技能或 `$git-graph`。技能调用 `open_git_graph` 时必须显式传入当前聊天工作目录的绝对路径,用户也可指定另一个本地仓库/worktree;不能将技能源码或缓存目录当目标。随后检查 MCP Apps 对话面板的仓库和内容并保留。默认成功后不主动输出文字、URL 或截图;上层指令或用户要求报告时正常回答,工具活动提示由应用控制。有效空状态视为成功;错误仓库、UI 错误、仅调用工具或未验证面板均不算成功。安装/更新后新开本地项目聊天;旧聊天可能报 unknown MCP server,工具缺失时先确认插件启用并新开聊天,不自动回退网页。
 - **目标选择与生命周期**:直接从 More tools 打开而未传路径时,采用客户端提供的唯一文件系统 root;客户端未声明 roots 能力时才采用进程工作目录。多个 root、零 root 或插件自身目录要求显式目标,非仓库报错。子目录解析为规范化仓库根,worktree 独立;每个 graphId 固定仓库,后续打开不替换已有视图。stdio 服务由 Codex 管理,不启动 HTTP 守护进程,无需持续运行的启动终端;不创建聊天或停止无关进程。初始历史放在 app 元数据中,后续读取工具仅对 app 可见,面板交互经 MCP 完成。
 - **显式浏览器回退**:仅用户明确要求时保留源码 HTTP 启动器与顶部项目 Action。源码构建后 `npm --prefix codex run open -- --repo <目标绝对路径>` 启动/复用服务并在 Codex 浏览器侧边页打开完整带 fragment URL,验证仓库内容。URL 按规范化仓库根缓存于用户私有临时目录,权限 0600;复用前验证回环 URL、认证和 `/api/identity` 的应用、协议与仓库。损坏/退出/仓库不符时重建,同仓库并发锁避免重复,不同仓库互不替换。不停止其他服务,不将带令牌 URL 写入 issue、PR 或仓库。关闭网页不会停止服务,首次启动终端 Ctrl+C 停止。更新后重新构建并停止旧服务再启动。Action 依赖应用加载本地环境,只启动 HTTP 服务;按钮显示与点击未实测。
 - **数据与共享核心**:复用 Git 命令白名单、提交/引用/分支/元信息解析、泳道算法、SVG 和 diff 截断逻辑。只执行 `log`、`show`、`for-each-ref`、`rev-parse`,每次 10 秒超时,单次输出最多 8 MiB,`LC_ALL=C`;无 shell,禁用外部 diff 和 textconv,路径按字面量处理。MCP 面板无需网络资源;HTTP 回退仅监听 IPv4 回环,固定启动时的仓库,接口只接受 GET,验证 Host/Origin 与每次启动的随机访问令牌。
@@ -309,7 +310,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 | 11 | 详情区文件列表 | 包含,平铺,带 `+n \| -n` |
 | 12 | mod 交付形式 | 仓库根目录即 mod |
 | 13 | 需求记录位置 | 仓库根目录 `PRD.md` |
-| 14 | 第二个打开入口 | 输入框上方的「Git Graph」按钮(左侧边栏和右上角菜单不可行),旁边显示当前分支 |
+| 14 | 第二个打开入口 | 输入框上方的「Wukong Git Graph」按钮(左侧边栏和右上角菜单不可行),旁边显示当前分支 |
 | 15 | 列表很长时的显示方式 | 窗口显示:一次画一批行,「Load more」换窗口,「↑ Newer commits」换回 |
 | 16 | 泳道配色 | 固定的色盲友好调色板(Okabe-Ito),不跟随主题 |
 | 17 | 列宽 | 按面板宽度自适应,默认宽度下只显示图和描述 |

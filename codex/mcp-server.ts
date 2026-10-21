@@ -10,7 +10,7 @@ import {
 import { readBranches, readDetail, readDiff, readGit, readPage } from './repository'
 import { isCommitHash } from '../hooks/git/argv'
 
-const PANEL_URI = 'ui://cc-git-graph/panel-v1.html'
+const PANEL_URI = 'ui://wukong-git-graph/panel-v1.html'
 const PANEL_MIME = 'text/html;profile=mcp-app'
 const resourceMeta = {
   ui: { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [] } },
@@ -19,7 +19,7 @@ const resourceMeta = {
 const annotations = { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
 const tools: Tool[] = [
   {
-    name: 'open_git_graph', title: 'Git Graph',
+    name: 'open_git_graph', title: 'Wukong Git Graph',
     description: 'Open a read-only Git graph for a local repository. Specify repository when the current project is unavailable or ambiguous.',
     inputSchema: {
       type: 'object', properties: { repository: { type: 'string', minLength: 1 } }, additionalProperties: false,
@@ -28,7 +28,7 @@ const tools: Tool[] = [
     _meta: { ui: { resourceUri: PANEL_URI }, 'openai/ui': { entrypoints: [{ type: 'thread' }] } },
   },
   {
-    name: 'read_git_graph', title: 'Read Git Graph', description: 'Read history for an already opened Git Graph view.',
+    name: 'read_git_graph', title: 'Read Wukong Git Graph', description: 'Read history for an already opened Wukong Git Graph view.',
     inputSchema: {
       type: 'object', properties: {
         graphId: { type: 'string', minLength: 1 }, operation: { type: 'string', enum: ['branches', 'commits', 'detail', 'diff'] },
@@ -60,7 +60,7 @@ function within(directory: string, root: string): boolean {
 }
 
 export function createGraphMcpServer(options: Options = {}): Server {
-  const server = new Server({ name: 'cc-git-graph', version: '0.1.0' }, { capabilities: { tools: {}, resources: {} } })
+  const server = new Server({ name: 'wukong-git-graph', version: '0.2.0' }, { capabilities: { tools: {}, resources: {} } })
   // Every view retains its own repository. Opening another graph never changes existing capabilities.
   const graphs = new Map<string, string>()
   const readPanel = options.readPanel ?? (() => readFile(join(__dirname, 'panel.html'), 'utf8'))
@@ -92,7 +92,7 @@ export function createGraphMcpServer(options: Options = {}): Server {
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }))
   server.setRequestHandler(ListResourcesRequestSchema, async () => ({ resources: [{
-    uri: PANEL_URI, name: 'Git Graph', description: 'Read-only local Git history panel', mimeType: PANEL_MIME, _meta: resourceMeta,
+    uri: PANEL_URI, name: 'Wukong Git Graph', description: 'Read-only local Git history panel', mimeType: PANEL_MIME, _meta: resourceMeta,
   }] }))
   server.setRequestHandler(ReadResourceRequestSchema, async request => {
     if (request.params.uri !== PANEL_URI) throw new Error('Unknown Git Graph resource.')
@@ -108,7 +108,7 @@ export function createGraphMcpServer(options: Options = {}): Server {
         const graphId = randomBytes(24).toString('hex')
         graphs.set(graphId, repository)
         return {
-          content: [{ type: 'text', text: 'Git Graph opened.' }],
+          content: [{ type: 'text', text: 'Wukong Git Graph opened.' }],
           structuredContent: { graphId, repository },
           _meta: { graph: { ...branches, ...page } },
         } satisfies CallToolResult

@@ -24,7 +24,7 @@ const BAND = {
 }
 
 const PANE = {
-  title: 'Git Graph',
+  title: 'Wukong Git Graph',
   isFocused: true,
   bodyColumns: 120,
   placement: 'dock' as const,

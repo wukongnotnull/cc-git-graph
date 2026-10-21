@@ -1,12 +1,12 @@
 {
-  "name": "cc-git-graph",
-  "description": "Git graph board mod for Claude Code",
+  "name": "wukong-git-graph",
+  "description": "Wukong Git Graph for Claude Code",
   "owner": { "name": "wukongnotnull" },
   "plugins": [
     {
-      "name": "cc-git-graph",
-      "description": "Read-only Git graph board for Claude Code Desktop",
-      "version": "0.2.0",
+      "name": "wukong-git-graph",
+      "description": "Wukong Git Graph: read-only Git history for Claude Code Desktop",
+      "version": "0.3.0",
       "source": "./"
     }
   ]

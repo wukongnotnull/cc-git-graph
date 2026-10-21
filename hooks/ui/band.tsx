@@ -104,7 +104,7 @@ export function renderBand(ui: DesktopUi, branch: string, usage: UsageSnapshot |
   return (
     <Box flexDirection="row" flexWrap="wrap" alignItems="center" justifyContent="space-between" columnGap={2} rowGap={0}>
       <Box key="band-left" flexDirection="row" alignItems="center" gap={2}>
-        <Button key="open-graph" label="Git Graph" onPress={onOpen} />
+        <Button key="open-graph" label="Wukong Git Graph" onPress={onOpen} />
         {branch === '' ? null : renderBranch(ui, branch)}
       </Box>
       {renderUsage(ui, usage, nowMs)}

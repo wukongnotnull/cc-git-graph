@@ -3,7 +3,7 @@ import type { Transport } from '@modelcontextprotocol/client'
 
 /** The official SDK owns message validation, source checks and request correlation. */
 export class McpBridge {
-  private readonly app = new App({ name: 'cc-git-graph', version: '0.1.0' }, {}, { autoResize: false })
+  private readonly app = new App({ name: 'wukong-git-graph', version: '0.2.0' }, {}, { autoResize: false })
   private connection?: Promise<void>
   constructor(readonly options: { transport?: Transport; timeout?: number } = {}) {
     this.app.ontoolresult = result => this.onToolResult(result)

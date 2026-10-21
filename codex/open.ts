@@ -7,7 +7,7 @@ if (args.length !== 2 || args[0] !== '--repo') {
   process.exitCode = 1
 } else {
   ensureGraphService(resolve(args[1]!)).then(service => {
-    console.log(`Git Graph ${service.reused ? 'reused' : 'started'}.\n${service.url}`)
+    console.log(`Wukong Git Graph ${service.reused ? 'reused' : 'started'}.\n${service.url}`)
     if (!service.reused) {
       console.log('Keep this terminal running. Press Ctrl+C to stop.')
       const stop = () => { void service.close().catch(() => { process.exitCode = 1 }) }

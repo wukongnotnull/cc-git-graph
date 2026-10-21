@@ -37,10 +37,10 @@ export async function startGraphServer(directory: string): Promise<{ url: string
         return
       }
       const received = Buffer.from(request.headers.authorization ?? '')
-      if (received.length !== auth.length || !timingSafeEqual(received, auth)) throw new RequestError('Reopen the full Git Graph URL from the terminal.', 401)
+      if (received.length !== auth.length || !timingSafeEqual(received, auth)) throw new RequestError('Reopen the full Wukong Git Graph URL from the terminal.', 401)
       const hash = url.searchParams.get('hash') ?? ''
       switch (url.pathname) {
-        case '/api/identity': json(200, { application: 'cc-git-graph', protocol: 1, repository: root }); break
+        case '/api/identity': json(200, { application: 'wukong-git-graph', protocol: 1, repository: root }); break
         case '/api/branches': json(200, await readBranches(root)); break
         case '/api/commits': json(200, await readPage(root, url.searchParams)); break
         case '/api/detail': json(200, await readDetail(root, hash)); break

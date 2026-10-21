@@ -93,6 +93,6 @@ export type ViewState = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'cc-git-graph': { view: ViewState; branch: string; usage: UsageSnapshot }
+    'wukong-git-graph': { view: ViewState; branch: string; usage: UsageSnapshot }
   }
 }

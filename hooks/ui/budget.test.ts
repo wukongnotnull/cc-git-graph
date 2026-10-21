@@ -37,7 +37,7 @@ const route = (args: readonly string[]): GitReply | undefined => {
 }
 
 const RUN = { command: 'git-graph', args: '', origin: { kind: 'composer' as const }, presentation: { isFullscreen: false, columns: 80 } }
-const PROPS = { title: 'Git Graph', isFocused: true, bodyColumns: 120, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 40 }, view: {} }
+const PROPS = { title: 'Wukong Git Graph', isFocused: true, bodyColumns: 120, placement: 'dock' as const, scroll: { offset: 0, bodyRows: 40 }, view: {} }
 
 type TestEngine = Parameters<TestBody>[0]
 
