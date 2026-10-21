@@ -15,7 +15,7 @@
 
 ## 打开图谱
 
-- **Codex**：选择 **More tools → Plugins and MCPs → Wukong Git Graph**，或输入 `/git-graph` 并选择 **Wukong Git Graph**。菜单入口无法确定当前项目时，会显示 **Repository path** 输入框；填入本地仓库绝对路径，点击 **Open repository**。路径无效时可在面板内修改并重试。
+- **Codex**：选择 **More tools → Plugins and MCPs → Wukong Git Graph**，或输入 `/wukong-git-graph` 并选择 **Wukong Git Graph**。菜单入口无法确定当前项目时，会显示 **Repository path** 输入框；填入本地仓库绝对路径，点击 **Open repository**。路径无效时可在面板内修改并重试。
 - **Claude Code**：输入 `/git-graph`，或点击 **Wukong Git Graph** 按钮。
 
 面板显示当前项目的提交、分支和文件改动。

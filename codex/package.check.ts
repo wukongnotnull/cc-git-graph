@@ -29,8 +29,12 @@ test('built plugin has synchronized portable and Codex manifests and the local m
   assert.match(codexEnvironment, /command = 'npm --prefix codex ci && npm --prefix codex run build && npm --prefix codex start -- --repo "\$PWD"'/)
   assert.deepEqual(await files(builtPackage), [
     '.codex-plugin/plugin.json', '.mcp.json', 'mcp.cjs', 'mcp.json', 'panel.html', 'plugin.json',
-    'skills/git-graph/SKILL.md', 'skills/git-graph/agents/openai.yaml',
+    'skills/wukong-git-graph/SKILL.md', 'skills/wukong-git-graph/agents/openai.yaml',
   ])
+  const skill = await readFile(join(builtPackage, 'skills/wukong-git-graph/SKILL.md'), 'utf8')
+  assert.match(skill, /^name: wukong-git-graph$/m)
+  const skillUi = await readFile(join(builtPackage, 'skills/wukong-git-graph/agents/openai.yaml'), 'utf8')
+  assert.match(skillUi, /Use \$wukong-git-graph /)
   const portable = await readJson(join(builtPackage, 'plugin.json'))
   const compatibility = await readJson(join(builtPackage, '.codex-plugin/plugin.json'))
   assert.equal(portable.$schema, 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json')

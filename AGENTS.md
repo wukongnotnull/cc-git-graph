@@ -23,7 +23,7 @@ Wukong Git Graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面
 
 ## Codex 图谱入口
 
-默认使用正式插件内的 `codex/skills/git-graph` 技能,通过 `open_git_graph` 显式传入当前聊天仓库的绝对路径,再检查 MCP Apps 对话面板显示目标仓库的历史或有效空状态并保留。不是调用工具就算成功;错误仓库、UI 错误、未验证面板均为失败。默认成功不输出文字或截图,上层指令和用户要求报告时除外。More tools → Plugins and MCPs → Wukong Git Graph 来自 MCP thread entrypoint。工具缺失或 unknown MCP server 时确认插件启用并新开聊天,不要自动回退浏览器。
+默认使用正式插件内的 `codex/skills/wukong-git-graph` 技能,通过 `open_git_graph` 显式传入当前聊天仓库的绝对路径,再检查 MCP Apps 对话面板显示目标仓库的历史或有效空状态并保留。不是调用工具就算成功;错误仓库、UI 错误、未验证面板均为失败。默认成功不输出文字或截图,上层指令和用户要求报告时除外。More tools → Plugins and MCPs → Wukong Git Graph 来自 MCP thread entrypoint。工具缺失或 unknown MCP server 时确认插件启用并新开聊天,不要自动回退浏览器。
 
 本地源码分发必须先在源码仓库执行 `npm --prefix codex ci`、`npm --prefix codex run build`,产物为忽略的自包含 `codex/dist/plugin`;根 `.agents/plugins/marketplace.json` 指向它。然后 `codex plugin marketplace add <本仓库绝对路径>`、`codex plugin add wukong-git-graph@wukong-git-graph-local`。未构建的 Git marketplace 安装不支持。修改源码后重新构建并重新安装/加载,旧聊天不会自动刷新工具绑定。Codex 插件版本独立于 Claude 清单版本,不要因此更改 Claude 版本。
 

@@ -1,6 +1,6 @@
 ---
-name: git-graph
-description: Use when the user invokes /git-graph or $git-graph, or asks to open a local repository's Git graph in Codex.
+name: wukong-git-graph
+description: Use when the user invokes /wukong-git-graph or $wukong-git-graph, or asks to open a local repository's Git graph in Codex.
 ---
 
 # Wukong Git Graph
