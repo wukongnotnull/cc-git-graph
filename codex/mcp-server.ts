@@ -103,7 +103,18 @@ export function createGraphMcpServer(options: Options = {}): Server {
       const args = request.params.arguments ?? {}
       if (request.params.name === 'open_git_graph') {
         onlyArguments(args, ['repository'])
-        const repository = await targetRepository(args)
+        let repository: string
+        try { repository = await targetRepository(args) }
+        catch (error) {
+          // A menu entry has no arguments. Keep the app renderable so the user can
+          // provide a target instead of letting the host replace it with an error page.
+          if (args.repository !== undefined || options.defaultRepository !== undefined) throw error
+          const message = error instanceof Error ? error.message : 'Specify a local repository path.'
+          return {
+            content: [{ type: 'text', text: message }],
+            structuredContent: { needsRepository: true, message },
+          } satisfies CallToolResult
+        }
         const [branches, page] = await Promise.all([readBranches(repository), readPage(repository, new URLSearchParams())])
         const graphId = randomBytes(24).toString('hex')
         graphs.set(graphId, repository)

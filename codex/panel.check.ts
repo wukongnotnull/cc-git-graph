@@ -116,3 +116,57 @@ test('panel API binds every operation to its own graph and validates returned sh
   const invalid = graphApi('other', async () => ({ structuredContent: { data: { branches: ['bad'], current: 3 } } }))
   await assert.rejects(invalid('/api/branches'), /Invalid/)
 })
+
+
+test('menu panel requests a repository, preserves failed input and opens history after retry', async t => {
+  const wire = endpoint()
+  const originalAdd = wire.window.addEventListener
+  wire.window.addEventListener = (name, handler) => { if (name === 'message') originalAdd(name, handler) }
+  class Node {
+    innerHTML = ''; textContent = ''; value = ''; disabled = false
+    listeners = new Map<string, (event: { preventDefault(): void }) => Promise<void> | void>()
+    addEventListener(name: string, listener: (event: { preventDefault(): void }) => Promise<void> | void) { this.listeners.set(name, listener) }
+    removeEventListener(name: string) { this.listeners.delete(name) }
+    focus() {}
+  }
+  const nodes = new Map(['app', 'repository-form', 'repository-path', 'repository-open', 'repository-error', 'graph'].map(id => [id, new Node()]))
+  const globals = {
+    window: wire.window,
+    document: { documentElement: { dataset: {} }, getElementById: (id: string) => nodes.get(id), activeElement: null },
+    HTMLElement: Node,
+  }
+  for (const [name, value] of Object.entries(globals)) Object.defineProperty(globalThis, name, { configurable: true, value })
+  t.after(() => { for (const name of Object.keys(globals)) delete (globalThis as Record<string, unknown>)[name] })
+  await import('./panel')
+  const initializing = await wire.next()
+  wire.reply(initializing, hostResult(initializing))
+  await wire.next()
+  wire.receive({ jsonrpc: '2.0', method: 'ui/notifications/tool-result', params: {
+    structuredContent: { needsRepository: true, message: 'Specify repository <explicitly>.' },
+  } })
+  await new Promise(resolve => setImmediate(resolve))
+  assert.match(nodes.get('app')!.innerHTML, /Repository path/)
+  assert.match(nodes.get('app')!.innerHTML, /&lt;explicitly&gt;/)
+  const submit = () => nodes.get('repository-form')!.listeners.get('submit')!({ preventDefault() {} })
+  nodes.get('repository-path')!.value = '/missing'
+  const failed = submit()
+  const first = await wire.next()
+  assert.deepEqual(first.params?.arguments, { repository: '/missing' })
+  assert.equal(nodes.get('repository-open')!.disabled, true)
+  wire.reply(first, { isError: true, content: [{ type: 'text', text: 'not a git repository <missing>' }] })
+  await failed
+  assert.equal(nodes.get('repository-path')!.value, '/missing')
+  assert.equal(nodes.get('repository-error')!.textContent, 'not a git repository <missing>')
+  assert.equal(nodes.get('repository-open')!.disabled, false)
+  nodes.get('repository-path')!.value = '/project'
+  const opened = submit()
+  wire.reply(await wire.next(), { content: [], structuredContent: { graphId: 'a'.repeat(48), repository: '/project' } })
+  const branches = await wire.next()
+  assert.equal(branches.params?.name, 'read_git_graph')
+  wire.reply(branches, { structuredContent: { data: { branches: [], current: 'main' } } })
+  wire.reply(await wire.next(), { structuredContent: { data: { commits: [], hasMore: false } } })
+  await opened
+  await new Promise(resolve => setImmediate(resolve))
+  assert.match(nodes.get('app')!.innerHTML, /\/project/)
+  assert.match(nodes.get('graph')!.innerHTML, /No commits/)
+})
