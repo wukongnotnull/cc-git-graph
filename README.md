@@ -95,7 +95,7 @@ codex plugin add wukong-git-graph@wukong-git-graph-local
 npm --prefix codex run open -- --repo "/absolute/path/to/repository"
 ```
 
-按终端提示在浏览器中打开地址。地址中含访问凭证，不要分享。启动服务的终端需要保持打开，按 `Ctrl+C` 停止服务。若 Codex 顶部显示 **Git Graph** Action，它也会启动这个网页备用方式；该按钮是否显示和能否点击尚未验证。
+按终端提示在浏览器中打开地址。地址中含访问凭证，不要分享。启动服务的终端需要保持打开，按 `Ctrl+C` 停止服务。若 Codex 顶部显示 **Wukong Git Graph** Action，它也会启动这个网页备用方式；该按钮是否显示和能否点击尚未验证。
 
 ### 检查与项目资料
 

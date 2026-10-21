@@ -31,7 +31,7 @@ Wukong Git Graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面
 
 仅用户明确要求浏览器回退时,独立定位包含 `codex/package.json` 的源码 checkout 及启动器,与目标仓库区分。在源码仓库构建后用持续运行终端执行 `npm --prefix codex run open -- --repo <目标绝对路径>`,验证/复用同仓库服务,用 Codex 浏览器侧边页打开完整 URL(含 fragment)并验证。首次启动终端保持运行,Ctrl+C 停止;不要把带令牌 URL 写进 issue、PR 或版本库。安装缓存内的插件不含 HTTP 启动器。Codex 适配测试:`npm --prefix codex test`、`npm --prefix codex run typecheck`;前者包含只复制插件包到空目录后的真实 stdio 启动测试。
 
-`.codex/environments/environment.toml` 的 Git Graph Action 保留为 HTTP 顶部启动入口,不自动打开侧边页。修改时保留其他 setup/actions 并实际执行命令;无法操作设置界面时,如实说明按钮显示与点击未验证。协议/构建通过不能当作桌面面板或菜单已验证。
+`.codex/environments/environment.toml` 的 Wukong Git Graph Action 保留为 HTTP 顶部启动入口,不自动打开侧边页。修改时保留其他 setup/actions 并实际执行命令;无法操作设置界面时,如实说明按钮显示与点击未验证。协议/构建通过不能当作桌面面板或菜单已验证。
 
 ## 分支流程
 
