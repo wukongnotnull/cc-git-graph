@@ -2,15 +2,18 @@
   "name": "cc-git-graph-codex",
   "version": "0.0.0",
   "private": true,
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "build": "esbuild cli.ts --bundle --platform=node --target=node22 --outfile=dist/server.cjs && esbuild open.ts --bundle --platform=node --target=node22 --outfile=dist/open.cjs && esbuild browser.ts --bundle --platform=browser --target=es2022 --outfile=dist/browser.js && esbuild mcp.ts --bundle --platform=node --target=node22 --outfile=dist/mcp.cjs",
+    "build": "esbuild --tsconfig=tsconfig.json cli.ts --bundle --platform=node --target=node22 --outfile=dist/server.cjs && esbuild --tsconfig=tsconfig.json open.ts --bundle --platform=node --target=node22 --outfile=dist/open.cjs && esbuild --tsconfig=tsconfig.browser.json browser.ts --bundle --platform=browser --target=es2022 --outfile=dist/browser.js && esbuild --tsconfig=tsconfig.json mcp.ts --bundle --platform=node --target=node22 --outfile=dist/mcp.cjs && esbuild panel.ts --tsconfig=tsconfig.browser.json --bundle --platform=browser --target=es2022 --outfile=dist/panel.js && node build-panel.mjs",
     "start": "node dist/server.cjs",
     "open": "node dist/open.cjs",
-    "test": "npm run build && esbuild server.check.ts render.check.ts launch.check.ts mcp.check.ts --bundle --platform=node --target=node22 --outdir=dist --out-extension:.js=.cjs && node --test dist/*.check.cjs",
+    "test": "npm run build && esbuild --tsconfig=tsconfig.json server.check.ts render.check.ts launch.check.ts mcp.check.ts panel.check.ts --bundle --platform=node --target=node22 --outdir=dist --out-extension:.js=.cjs && node --test dist/*.check.cjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.browser.json"
   },
   "devDependencies": {
+    "@modelcontextprotocol/ext-apps": "2.0.3",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@types/node": "22.10.2",
     "esbuild": "0.25.12",
