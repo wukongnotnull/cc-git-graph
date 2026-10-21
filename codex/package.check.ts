@@ -24,6 +24,9 @@ async function files(directory: string, prefix = ''): Promise<string[]> {
 }
 
 test('built plugin has synchronized portable and Codex manifests and the local marketplace targets it', async () => {
+  const codexEnvironment = await readFile(resolve(__dirname, '../../.codex/environments/environment.toml'), 'utf8')
+  assert.deepEqual([...codexEnvironment.matchAll(/^name = "([^"]+)"$/gm)].map(([, name]) => name), ['Wukong Git Graph', 'Wukong Git Graph'])
+  assert.match(codexEnvironment, /command = 'npm --prefix codex ci && npm --prefix codex run build && npm --prefix codex start -- --repo "\$PWD"'/)
   assert.deepEqual(await files(builtPackage), [
     '.codex-plugin/plugin.json', '.mcp.json', 'mcp.cjs', 'mcp.json', 'panel.html', 'plugin.json',
     'skills/git-graph/SKILL.md', 'skills/git-graph/agents/openai.yaml',
