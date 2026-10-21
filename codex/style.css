@@ -49,3 +49,5 @@ h2 { font-size:12px; font-weight:500; } h2 span { color:var(--muted); margin-lef
 :root[data-theme="light"] .error { color:#8c2821; background:#fff0ee; }
 :root[data-theme="light"] .added { color:#1c5b3d; background:#e5f6ec; }
 :root[data-theme="light"] .deleted { color:#922e25; background:#ffebe8; }
+
+.repository-picker input { flex:1; min-width:180px; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; }
