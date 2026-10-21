@@ -1,6 +1,6 @@
 import { test, type TestContext } from 'node:test'
 import assert from 'node:assert/strict'
-import { copyFile, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises'
+import { chmod, copyFile, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -9,6 +9,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { ListRootsRequestSchema, type CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { watch } from 'node:fs'
+import { readThreadDirectory } from './thread-repository'
 import { createGraphMcpServer } from './mcp-server'
 import type { Branches, Page } from './protocol'
 import type { CommitDetail } from '../claude/types'
@@ -251,4 +253,200 @@ test('menu without a usable project returns a renderable repository prompt and a
   assert.match(String(result.structuredContent?.message), /plugin package/)
   assert.equal(result.structuredContent?.graphId, undefined)
   assert.equal((await open(client, {repository: directory})).repository, await realpath(directory))
+})
+
+
+const chatA = '01a15d8c-d9ab-72b2-8b48-c6cb5b5ea342'
+const chatB = '01a15d90-d2d7-7e32-a233-ef41fc881782'
+
+test('MCP uses the calling chat metadata to open independent repositories without a path', async t => {
+  const a = await repository(t), b = await repository(t)
+  const calls: string[] = []
+  const client = await connect(t, {readThreadDirectory: async (id: string) => { calls.push(id); return id === chatA ? join(a.directory, 'sub') : b.directory }})
+  const first = await client.callTool({name: 'open_git_graph', arguments: {}, _meta: {thread_id: chatA}}) as CallToolResult
+  assert.equal(first.structuredContent?.repository, await realpath(a.directory))
+  const second = await client.callTool({name: 'open_git_graph', arguments: {}, _meta: {threadId: chatB}}) as CallToolResult
+  assert.equal(second.structuredContent?.repository, await realpath(b.directory))
+  assert.notEqual(first.structuredContent?.graphId, second.structuredContent?.graphId)
+  assert.deepEqual(calls, [chatA, chatB])
+  assert.equal((await read<Branches>(client, first.structuredContent!.graphId as string, 'branches')).current, 'main')
+})
+
+test('MCP calling chat lookup preserves explicit, default and roots precedence and fails closed', async t => {
+  const a = await repository(t)
+  const lookup = async () => { throw new Error('chat lookup failed') }
+  for (const [options, roots, args] of [
+    [{readThreadDirectory: lookup}, undefined, {repository: a.directory}],
+    [{readThreadDirectory: lookup, defaultRepository: a.directory}, undefined, {}],
+    [{readThreadDirectory: lookup}, [a.directory], {}],
+  ] as const) {
+    const client = await connect(t, options, roots && [...roots])
+    const result = await client.callTool({name: 'open_git_graph', arguments: args, _meta: {thread_id: chatA}}) as CallToolResult
+    assert.equal(result.structuredContent?.repository, await realpath(a.directory))
+  }
+  const client = await connect(t, {readThreadDirectory: lookup})
+  const saved = process.cwd()
+  try {
+    process.chdir(a.directory)
+    const result = await client.callTool({name: 'open_git_graph', arguments: {}, _meta: {thread_id: chatA}}) as CallToolResult
+    assert.equal(result.structuredContent?.needsRepository, true)
+    assert.match(String(result.structuredContent?.message), /chat lookup failed/)
+    assert.equal(result.structuredContent?.graphId, undefined)
+  } finally { process.chdir(saved) }
+})
+
+
+async function codexFixture(t: TestContext, response: Record<string, unknown>, mode = 'normal') {
+  const directory = await mkdtemp(join(tmpdir(), 'graph-codex-cli-'))
+  t.after(() => rm(directory, {recursive: true, force: true}))
+  const command = join(directory, 'codex')
+  const trace = join(directory, 'trace.jsonl'), closed = join(directory, 'closed'), pid = join(directory, 'pid')
+  const output = JSON.stringify({id: 2, result: response}) + '\n'
+  const behavior = mode === 'malformed' ? "console.log('not json')" : mode === 'oversized' ? "process.stdout.write('x'.repeat(1024 * 1024 + 1))" : mode === 'exit' ? 'process.exit(1)' : mode === 'hang' ? `process.on('SIGTERM', () => {}); setInterval(() => {}, 1000); fs.writeFileSync(${JSON.stringify(join(directory, 'ready'))}, 'ready')` : mode === 'fragmented' ? `const b = Buffer.from(${JSON.stringify(output)}); const at = b.indexOf(Buffer.from('测')) + 1; process.stdout.write(b.subarray(0, at), () => setImmediate(() => process.stdout.write(b.subarray(at))))` : `console.log(JSON.stringify({id: msg.id, ${mode === 'error' ? 'error' : 'result'}: ${JSON.stringify(response)}}))`
+  const script = `#!${process.execPath}
+const fs = require('node:fs');
+fs.writeFileSync(${JSON.stringify(pid)}, String(process.pid));
+const rl = require('node:readline').createInterface({input: process.stdin});
+rl.on('line', line => {
+  const msg = JSON.parse(line);
+  fs.appendFileSync(${JSON.stringify(trace)}, line + '\\n');
+  if (msg.method === 'initialize') console.log(JSON.stringify({id: msg.id, result: {}}));
+  if (msg.method === 'thread/read') { ${behavior}; }
+});
+rl.on('close', () => fs.writeFileSync(${JSON.stringify(closed)}, 'closed'));
+`
+  await writeFile(command, script)
+  await chmod(command, 0o755)
+  const path = process.env.PATH
+  process.env.PATH = directory + ':' + (path ?? '')
+  t.after(() => { if (path === undefined) delete process.env.PATH; else process.env.PATH = path })
+  return {trace, closed, pid, directory}
+}
+
+test('calling chat resolves through a short-lived Codex CLI without reading turns', async t => {
+  const {directory} = await repository(t)
+  const fixture = await codexFixture(t, {thread: {id: chatA, cwd: join(directory, 'sub')}})
+  const client = await connect(t)
+  const result = await client.callTool({name: 'open_git_graph', arguments: {}, _meta: {thread_id: chatA}}) as CallToolResult
+  assert.equal(result.structuredContent?.repository, await realpath(directory))
+  const calls = (await readFile(fixture.trace, 'utf8')).trim().split('\n').map(line => JSON.parse(line))
+  assert.deepEqual(calls.map(call => call.method), ['initialize', 'initialized', 'thread/read'])
+  assert.deepEqual(calls[2].params, {threadId: chatA, includeTurns: false})
+  assert.equal(await readFile(fixture.closed, 'utf8'), 'closed')
+  const pid = Number(await readFile(fixture.pid, 'utf8'))
+  assert.throws(() => process.kill(pid, 0))
+})
+
+
+test('calling chat refuses malformed metadata without querying another chat', async t => {
+  let calls = 0
+  const client = await connect(t, {readThreadDirectory: async () => { calls++; throw new Error('must not query') }})
+  for (const meta of [{thread_id: '../other'}, {thread_id: 42}, {thread_id: ''}, {thread_id: chatA, threadId: chatB}]) {
+    const result = await client.callTool({name: 'open_git_graph', arguments: {}, _meta: meta}) as CallToolResult
+    assert.equal(result.structuredContent?.needsRepository, true)
+    assert.equal(result.structuredContent?.graphId, undefined)
+  }
+  assert.equal(calls, 0)
+})
+
+test('calling chat rejects bad CLI responses and reaps the subprocess', async t => {
+  for (const [mode, response] of [
+    ['normal', {thread: {id: chatB, cwd: '/other'}}],
+    ['normal', {thread: {id: chatA, cwd: 'relative'}}],
+    ['normal', {thread: {id: chatA, cwd: '/bad\0path'}}],
+    ['error', {code: -32601, message: 'unsupported method'}],
+    ['malformed', {}], ['oversized', {}], ['exit', {}], ['hang', {}],
+  ] as const) {
+    await t.test(mode + JSON.stringify(response), async t => {
+      const fixture = await codexFixture(t, response, mode)
+      const client = await connect(t)
+      const result = await client.callTool({name: 'open_git_graph', arguments: {}, _meta: {thread_id: chatA}}) as CallToolResult
+      assert.equal(result.structuredContent?.needsRepository, true)
+      assert.equal(result.structuredContent?.graphId, undefined)
+      const pid = Number(await readFile(fixture.pid, 'utf8'))
+      assert.throws(() => process.kill(pid, 0), `child still alive: ${pid}`)
+    })
+  }
+})
+
+
+test('calling chat lookup preserves UTF-8 paths split across stdout chunks', async t => {
+  const cwd = '/测试/' + '测'.repeat(2000)
+  await codexFixture(t, {thread: {id: chatA, cwd}}, 'fragmented')
+  assert.equal(await readThreadDirectory(chatA), cwd)
+})
+
+test('calling chat lookup supports cancellation and a missing executable without orphaning children', async t => {
+  const fixture = await codexFixture(t, {}, 'hang')
+  const aborted = new AbortController()
+  aborted.abort()
+  await assert.rejects(readThreadDirectory(chatA, {signal: aborted.signal}), /cancelled/)
+  await assert.rejects(readFile(fixture.pid), /ENOENT/)
+  const controller = new AbortController()
+  let watcher: ReturnType<typeof watch>
+  const ready = new Promise<void>(resolve => { watcher = watch(fixture.directory, (_event, name) => { if (name === 'ready') resolve() }) })
+  t.after(() => watcher.close())
+  const reading = readThreadDirectory(chatA, {signal: controller.signal})
+  const rejected = assert.rejects(reading, /cancelled/)
+  await ready
+  controller.abort()
+  await rejected
+  const pid = Number(await readFile(fixture.pid, 'utf8'))
+  assert.throws(() => process.kill(pid, 0))
+  await assert.rejects(readThreadDirectory(chatA, {command: join(fixture.directory, 'missing')}), /start Codex CLI/)
+})
+
+
+test('calling chat keeps its worktree and does not override ambiguous client roots', async t => {
+  const a = await repository(t), b = await repository(t)
+  const linked = join(a.directory, 'linked')
+  a.git('worktree', 'add', '-b', 'linked-chat', linked)
+  let calls = 0
+  const lookup = async () => { calls++; return join(linked, 'sub') }
+  const client = await connect(t, {readThreadDirectory: lookup})
+  const result = await client.callTool({name: 'open_git_graph', arguments: {}, _meta: {thread_id: chatA, threadId: chatA}}) as CallToolResult
+  assert.equal(result.structuredContent?.repository, await realpath(linked))
+  assert.equal((await read<Branches>(client, result.structuredContent!.graphId as string, 'branches')).current, 'linked-chat')
+  for (const roots of [[], [a.directory, b.directory]]) {
+    const other = await connect(t, {readThreadDirectory: lookup}, roots)
+    const unavailable = await other.callTool({name: 'open_git_graph', arguments: {}, _meta: {thread_id: chatA}}) as CallToolResult
+    assert.equal(unavailable.structuredContent?.needsRepository, true)
+  }
+  assert.equal(calls, 1)
+})
+
+
+test('calling chat bounds teardown when a CLI wrapper leaves inherited pipes in a descendant', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'graph-wrapper-'))
+  t.after(() => rm(directory, {recursive: true, force: true}))
+  const command = join(directory, 'wrapper.cjs')
+  await writeFile(command, `
+const {spawn} = require('node:child_process');
+const descendant = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 3000)'], {stdio: ['ignore', 'inherit', 'inherit']});
+process.stdin.resume();
+process.stdin.on('end', () => process.exit(0));
+`)
+  const started = Date.now()
+  await assert.rejects(readThreadDirectory(chatA, {command: process.execPath, args: [command], timeoutMs: 150}), /timed out/)
+  assert.ok(Date.now() - started < 2000, 'descendant pipes kept lookup alive past teardown deadline')
+})
+
+
+test('calling chat cleans descendants even when they do not inherit stdio', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'graph-quiet-wrapper-'))
+  t.after(() => rm(directory, {recursive: true, force: true}))
+  const command = join(directory, 'wrapper.cjs'), pidFile = join(directory, 'descendant')
+  await writeFile(command, `
+const {spawn} = require('node:child_process');
+const fs = require('node:fs');
+const descendant = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 3000)'], {stdio: 'ignore'});
+fs.writeFileSync(${JSON.stringify(pidFile)}, String(descendant.pid));
+process.stdin.resume();
+process.stdin.on('end', () => process.exit(0));
+`)
+  await assert.rejects(readThreadDirectory(chatA, {command: process.execPath, args: [command], timeoutMs: 150}), /timed out/)
+  const pid = Number(await readFile(pidFile, 'utf8'))
+  let status = ''
+  try { status = execFileSync('ps', ['-o', 'stat=', '-p', String(pid)], {encoding: 'utf8'}).trim() } catch {}
+  assert.ok(status === '' || status.startsWith('Z'), `descendant survived: ${pid} (${status})`)
 })

@@ -8,6 +8,7 @@ import {
   type CallToolResult, type Tool,
 } from '@modelcontextprotocol/sdk/types.js'
 import { readBranches, readDetail, readDiff, readGit, readPage } from './repository'
+import { readThreadDirectory, threadIdFromMeta } from './thread-repository'
 import { isCommitHash } from '../claude/hooks/git/argv'
 
 const PANEL_URI = 'ui://wukong-git-graph/panel-v1.html'
@@ -41,7 +42,7 @@ const tools: Tool[] = [
   },
 ]
 
-type Options = { defaultRepository?: string; readPanel?: () => Promise<string> }
+type Options = { defaultRepository?: string; readPanel?: () => Promise<string>; readThreadDirectory?: (threadId: string, signal?: AbortSignal) => Promise<string> }
 
 function onlyArguments(args: Record<string, unknown>, allowed: readonly string[]): void {
   const extra = Object.keys(args).find(key => !allowed.includes(key))
@@ -65,7 +66,7 @@ export function createGraphMcpServer(options: Options = {}): Server {
   const graphs = new Map<string, string>()
   const readPanel = options.readPanel ?? (() => readFile(join(__dirname, 'panel.html'), 'utf8'))
 
-  async function targetRepository(args: Record<string, unknown>): Promise<string> {
+  async function targetRepository(args: Record<string, unknown>, meta: Record<string, unknown> | undefined, signal: AbortSignal): Promise<string> {
     let target: string
     if (args.repository !== undefined) target = stringArgument(args, 'repository')
     else if (options.defaultRepository !== undefined) target = stringArgument({ repository: options.defaultRepository }, 'repository')
@@ -77,7 +78,9 @@ export function createGraphMcpServer(options: Options = {}): Server {
       if (root.protocol !== 'file:') throw new Error('Specify repository explicitly; the project root must be a file URL.')
       target = fileURLToPath(root)
     } else {
-      target = await realpath(process.cwd())
+      const threadId = threadIdFromMeta(meta)
+      target = threadId === undefined ? await realpath(process.cwd())
+        : await (options.readThreadDirectory ?? ((id, signal) => readThreadDirectory(id, { signal })))(threadId, signal)
     }
     const directory = await realpath(target)
     if (args.repository === undefined && options.defaultRepository === undefined) {
@@ -98,13 +101,13 @@ export function createGraphMcpServer(options: Options = {}): Server {
     if (request.params.uri !== PANEL_URI) throw new Error('Unknown Git Graph resource.')
     return { contents: [{ uri: PANEL_URI, mimeType: PANEL_MIME, text: await readPanel(), _meta: resourceMeta }] }
   })
-  server.setRequestHandler(CallToolRequestSchema, async request => {
+  server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     try {
       const args = request.params.arguments ?? {}
       if (request.params.name === 'open_git_graph') {
         onlyArguments(args, ['repository'])
         let repository: string
-        try { repository = await targetRepository(args) }
+        try { repository = await targetRepository(args, request.params._meta, extra.signal) }
         catch (error) {
           // A menu entry has no arguments. Keep the app renderable so the user can
           // provide a target instead of letting the host replace it with an error page.
