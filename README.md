@@ -1,4 +1,4 @@
-# cc-git-graph
+# wukong-git-graph
 
 在 Codex 或 Claude Code 里查看项目的修改历史。Git Graph 会把保存下来的代码改动（Git 提交）和不同的开发线（分支）画成图，方便快速了解项目变化。它只供查看，不会修改代码或历史记录。
 
@@ -18,8 +18,8 @@
 打开 Codex 的 **Terminal** 工具，或电脑自带的终端，复制并运行：
 
 ```bash
-git clone https://github.com/wukongnotnull/cc-git-graph.git
-cd cc-git-graph
+git clone https://github.com/wukongnotnull/wukong-git-graph.git
+cd wukong-git-graph
 ```
 
 这会把安装所需的文件下载到电脑，并进入该文件夹。
@@ -50,7 +50,7 @@ codex plugin add cc-git-graph@cc-git-graph-local
 在电脑终端中运行：
 
 ```bash
-claude plugin marketplace add wukongnotnull/cc-git-graph
+claude plugin marketplace add wukongnotnull/wukong-git-graph
 claude plugin install cc-git-graph@cc-git-graph
 ```
 

@@ -221,7 +221,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 - **实现形态**:Claude Code mod。用 `$.ui.open` 打开 Pane,用 `ui.render` 钩子绘制,用 `$.command.register` 加 `command.run` 钩子实现 `/git-graph`。
 - **数据读取**:`$.process.run` 执行 git 读取命令;输出有长度上限,会返回 `isStdoutTruncated`,实现时必须处理。
 - **绘制**:desktop surface 有 `Svg`、`Input`、`Select`、`Code`,分别用于泳道图和徽章、筛选控件、文件 diff。
-- **交付与安装**:仓库根目录就是 mod,市场清单在 `.claude-plugin/marketplace.json`。安装要在**终端**里运行(桌面应用的会话里没有 `/plugin install`):`/plugin install cc-git-graph --marketplace wukongnotnull/cc-git-graph`,或 `claude plugin marketplace add wukongnotnull/cc-git-graph` 加 `claude plugin install cc-git-graph@cc-git-graph`;装在 user scope 后桌面应用里新开的本地会话都会加载。更新要同时提升 `plugin.json` 和 `marketplace.json` 的 `version`,再 `claude plugin update`。
+- **交付与安装**:仓库根目录就是 mod,市场清单在 `.claude-plugin/marketplace.json`。安装要在**终端**里运行(桌面应用的会话里没有 `/plugin install`):`/plugin install cc-git-graph --marketplace wukongnotnull/wukong-git-graph`,或 `claude plugin marketplace add wukongnotnull/wukong-git-graph` 加 `claude plugin install cc-git-graph@cc-git-graph`;装在 user scope 后桌面应用里新开的本地会话都会加载。更新要同时提升 `plugin.json` 和 `marketplace.json` 的 `version`,再 `claude plugin update`。
 - **面板内容上限**:引擎对一个面板的内容总量有约 20 万字符的上限,所以列表按窗口显示,diff 限制 3 万字符(见 FR-5、FR-7)。
 - **按钮里的样式**:`Button` 会把子元素压成纯文本,徽章因此画在按钮外面,只有描述文字在按钮里。
 - **SVG 的悬停提示**:`isInteractive` 的 SVG 在沙盒框里,面板每次重画(包括滚动)都会重新加载而闪烁,所以不用;被截断的完整名称放在详情的 Refs 行里。
@@ -277,7 +277,7 @@ v1 以功能验收为准,见第 8 节。没有定量的使用数据指标(访谈
 
 ## 11. Codex 适配
 
-来源:用户在 Codex 中确认 [Issue #51](https://github.com/wukongnotnull/cc-git-graph/issues/51) 的方案。第 1–10 节的 mod API、按钮条和引擎限制针对 Claude Code;Codex 采用以下独立入口和运行方式。
+来源:用户在 Codex 中确认 [Issue #51](https://github.com/wukongnotnull/wukong-git-graph/issues/51) 的方案。第 1–10 节的 mod API、按钮条和引擎限制针对 Claude Code;Codex 采用以下独立入口和运行方式。
 
 - **安装与分发**:要求 Git、Node.js 22+ 与 npm。采用本地源码分发:先 `npm --prefix codex ci`、`npm --prefix codex run build`,构建生成忽略的自包含 `codex/dist/plugin`,包含 portable Agent Plugins `plugin.json`/`mcp.json`、Codex `.codex-plugin/plugin.json`/`.mcp.json`、MCP bundle、内嵌脚本样式的 HTML 与技能。根 `.agents/plugins/marketplace.json` 的 `cc-git-graph-local` 指向该包;用 `codex plugin marketplace add <源码仓库绝对路径>` 和 `codex plugin add cc-git-graph@cc-git-graph-local` 安装。安装缓存无需源码和 node_modules,支持只搬移完整包后启动;不支持未构建的 Git marketplace 安装。Codex 插件版本独立于 Claude 版本。更新后重新构建并重新安装/加载,保留用户已有技能内容,仅在确认是本任务旧链接后移除重复的用户技能链接。
 - **打开方式**:默认由正式插件提供 **More tools → Plugins and MCPs → Git Graph** thread entrypoint,以及 `/git-graph` 选择技能或 `$git-graph`。技能调用 `open_git_graph` 时必须显式传入当前聊天工作目录的绝对路径,用户也可指定另一个本地仓库/worktree;不能将技能源码或缓存目录当目标。随后检查 MCP Apps 对话面板的仓库和内容并保留。默认成功后不主动输出文字、URL 或截图;上层指令或用户要求报告时正常回答,工具活动提示由应用控制。有效空状态视为成功;错误仓库、UI 错误、仅调用工具或未验证面板均不算成功。安装/更新后新开本地项目聊天;旧聊天可能报 unknown MCP server,工具缺失时先确认插件启用并新开聊天,不自动回退网页。

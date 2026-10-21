@@ -50,5 +50,5 @@
 - 输入框上方显示当前分支,以及 Session、Week 用量窗口、上下文占用和会话花费。
 - 列按面板宽度自适应。
 
-[0.2.0]: https://github.com/wukongnotnull/cc-git-graph/compare/cc-git-graph--v0.1.0...cc-git-graph--v0.2.0
-[0.1.0]: https://github.com/wukongnotnull/cc-git-graph/releases/tag/cc-git-graph--v0.1.0
+[0.2.0]: https://github.com/wukongnotnull/wukong-git-graph/compare/cc-git-graph--v0.1.0...cc-git-graph--v0.2.0
+[0.1.0]: https://github.com/wukongnotnull/wukong-git-graph/releases/tag/cc-git-graph--v0.1.0
