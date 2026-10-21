@@ -27,7 +27,7 @@ Wukong Git Graph:Claude Code mod,在桌面应用里显示只读的 Git 图谱面
 
 本地源码分发必须先在源码仓库执行 `npm --prefix codex ci`、`npm --prefix codex run build`,产物为忽略的自包含 `codex/dist/plugin`;根 `.agents/plugins/marketplace.json` 指向它。然后 `codex plugin marketplace add <本仓库绝对路径>`、`codex plugin add wukong-git-graph@wukong-git-graph-local`。未构建的 Git marketplace 安装不支持。修改源码后重新构建并重新安装/加载,旧聊天不会自动刷新工具绑定。Codex 插件版本独立于 Claude 清单版本,不要因此更改 Claude 版本。
 
-不传路径时 MCP 依次采用客户端唯一文件系统 root、无 roots 能力时的进程工作目录;有多个/零个 root 或落在插件自身目录时要求显式目标,不能猜源码目录。子目录规范化到仓库根、worktree 独立;每个 graphId 固定仓库。stdio 进程由 Codex 管理,不启动 HTTP 守护进程。不得覆盖用户技能内容;检查旧 `~/.codex/skills/git-graph` 是本任务创建的链接后,仅移除该链接避免重复发现。
+不传路径时 MCP 优先采用客户端唯一文件系统 root;无 roots 能力时,按本次调用 `_meta.thread_id` / `_meta.threadId` 用短生命周期 `codex app-server` 的 `thread/read`（`includeTurns:false`）读取对应聊天 cwd,只在缺少聊天 ID 时才采用进程工作目录。聊天查询失败、ID 无效/冲突时返回路径输入,不猜其他聊天或退回进程目录;查询限 5 秒和 1 MiB stdout,所有退出路径回收子进程;有多个/零个 root 或落在插件自身目录时要求显式目标,不能猜源码目录。子目录规范化到仓库根、worktree 独立;每个 graphId 固定仓库。stdio 进程由 Codex 管理,不启动 HTTP 守护进程。不得覆盖用户技能内容;检查旧 `~/.codex/skills/git-graph` 是本任务创建的链接后,仅移除该链接避免重复发现。
 
 仅用户明确要求浏览器回退时,独立定位包含 `codex/package.json` 的源码 checkout 及启动器,与目标仓库区分。在源码仓库构建后用持续运行终端执行 `npm --prefix codex run open -- --repo <目标绝对路径>`,验证/复用同仓库服务,用 Codex 浏览器侧边页打开完整 URL(含 fragment)并验证。首次启动终端保持运行,Ctrl+C 停止;不要把带令牌 URL 写进 issue、PR 或版本库。安装缓存内的插件不含 HTTP 启动器。Codex 适配测试:`npm --prefix codex test`、`npm --prefix codex run typecheck`;前者包含只复制插件包到空目录后的真实 stdio 启动测试。
 
