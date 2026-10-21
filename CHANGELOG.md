@@ -24,8 +24,8 @@
 
 ### Changed
 
-- 产品显示名统一为 **Wukong Git Graph**,GitHub 仓库和 Claude/Codex 插件 ID 统一为 `wukong-git-graph`;Claude 插件版本升至 0.3.0,Codex 插件版本升至 0.2.0(#56)。
-- 更新 Codex 与 Claude 的安装、启用和更新说明;已安装旧 ID 的用户需按新 ID 重新安装(#56)。
+- 产品显示名统一为 **Wukong Git Graph**,GitHub 仓库和 Claude/Codex 插件 ID 统一为 `wukong-git-graph`;Claude 插件版本升至 0.3.0,Codex 插件版本升至 0.2.0(#58)。
+- 更新 Codex 与 Claude 的安装、启用和更新说明;已安装旧 ID 的用户需按新 ID 重新安装(#58)。
 
 ## [0.2.0] - 2026-10-14
 
