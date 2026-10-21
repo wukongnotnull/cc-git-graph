@@ -15,7 +15,7 @@
 
 ## 打开图谱
 
-- **Codex**：选择 **More tools → Plugins and MCPs → Wukong Git Graph**，或输入 `/git-graph` 并选择 **Wukong Git Graph**。
+- **Codex**：选择 **More tools → Plugins and MCPs → Wukong Git Graph**，或输入 `/wukong-git-graph` 并选择 **Wukong Git Graph**。
 - **Claude Code**：输入 `/git-graph`，或点击 **Wukong Git Graph** 按钮。
 
 面板显示当前项目的提交、分支和文件改动。
